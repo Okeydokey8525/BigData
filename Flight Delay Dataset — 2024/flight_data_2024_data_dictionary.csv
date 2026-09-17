@@ -1,0 +1,36 @@
+﻿column,dtype,null_pct,example_value,meaning_vi
+year,Int64,0.0,2024,Năm diễn ra chuyến bay (2024)
+month,Int64,0.0,1,Tháng trong năm (1 - 12)
+day_of_month,Int64,0.0,1,Ngày trong tháng (1 - 31)
+day_of_week,Int64,0.0,1,"Ngày trong tuần (1: Thứ Hai, ..., 7: Chủ Nhật)"
+fl_date,datetime64[ns],0.0,2024-01-01 00:00:00,Ngày bay đầy đủ (YYYY-MM-DD)
+op_unique_carrier,object,0.0,9E,"Mã ký hiệu hãng hàng không khai thác (IATA code, ví dụ: 9E, AA, DL, WN)"
+op_carrier_fl_num,float64,0.0,4814.0,Số hiệu chuyến bay (Flight Number)
+origin,object,0.0,JFK,"Mã IATA sân bay xuất phát (ví dụ: JFK, LAX, DFW)"
+origin_city_name,object,0.0,"New York, NY",Tên thành phố và mã bang xuất phát
+origin_state_nm,object,0.0,New York,Tên đầy đủ của bang xuất phát
+dest,object,0.0,DTW,"Mã IATA sân bay điểm đến (ví dụ: DTW, MIA, SFO)"
+dest_city_name,object,0.0,"Detroit, MI",Tên thành phố và mã bang điểm đến
+dest_state_nm,object,0.0,Michigan,Tên đầy đủ của bang điểm đến
+crs_dep_time,Int64,0.0,1252,"Giờ khởi hành dự kiến theo lịch (CRS, định dạng HHMM)"
+dep_time,float64,1.31,1247.0,"Giờ khởi hành thực tế (HHMM, rỗng nếu hủy chuyến)"
+dep_delay,float64,1.31,-5.0,"Độ trễ khởi hành tính bằng phút (Số âm: sớm, số dương: trễ)"
+taxi_out,float64,1.35,31.0,Thời gian máy bay lăn từ cửa ga ra đường băng cất cánh (phút)
+wheels_off,float64,1.35,1318.0,Thời điểm bánh máy bay rời mặt đất (HHMM)
+wheels_on,float64,1.38,1442.0,Thời điểm bánh máy bay chạm đường băng đến (HHMM)
+taxi_in,float64,1.38,7.0,Thời gian máy bay lăn từ đường băng vào cổng đón khách (phút)
+crs_arr_time,Int64,0.0,1508,Giờ hạ cánh dự kiến theo lịch (HHMM)
+arr_time,float64,1.38,1449.0,Giờ hạ cánh thực tế (HHMM)
+arr_delay,float64,1.61,-19.0,"Độ trễ khi đến đích tính bằng phút (Biến mục tiêu đánh giá trễ, dương: trễ, âm: sớm)"
+cancelled,int64,0.0,0,"Cờ đánh dấu chuyến bay bị hủy (1: Bị hủy, 0: Không hủy)"
+cancellation_code,object,98.64,B,"Mã lý do hủy chuyến (A: Hãng bay, B: Thời tiết, C: Không lưu NAS, D: An ninh)"
+diverted,int64,0.0,0,"Cờ đánh dấu chuyến bay bị chuyển hướng sang sân bay khác (1: Có, 0: Không)"
+crs_elapsed_time,float64,0.0,136.0,Tổng thời gian hành trình dự kiến từ cổng đi đến cổng đến (phút)
+actual_elapsed_time,float64,1.61,122.0,Tổng thời gian hành trình thực tế (phút)
+air_time,float64,1.61,84.0,"Thời gian bay thực tế trên không (từ wheels_off đến wheels_on, phút)"
+distance,float64,0.0,509.0,Khoảng cách giữa hai sân bay (dặm - miles)
+carrier_delay,int64,0.0,0,"Số phút trễ do lỗi hãng hàng không (bảo trì, phi hành đoàn đến muộn,...)"
+weather_delay,int64,0.0,0,Số phút trễ do điều kiện thời tiết khắc nghiệt
+nas_delay,int64,0.0,0,"Số phút trễ do hệ thống không phận quốc gia (lưu lượng đông, kiểm soát không lưu,...)"
+security_delay,int64,0.0,0,"Số phút trễ do sự cố an ninh (sơ tán, kiểm tra an ninh lại,...)"
+late_aircraft_delay,int64,0.0,0,Số phút trễ dây chuyền do máy bay từ chặng trước đến muộn
