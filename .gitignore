@@ -29,6 +29,7 @@ checkpoints/
 metastore_db/
 derby.log
 spark-warehouse/
+catboost_info/
 *.log
 
 # 4. TRAINED MODELS / ARTIFACTS
