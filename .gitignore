@@ -30,6 +30,7 @@ metastore_db/
 derby.log
 spark-warehouse/
 catboost_info/
+hadoop/
 *.log
 
 # 4. TRAINED MODELS / ARTIFACTS

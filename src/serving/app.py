@@ -199,11 +199,14 @@ def get_metadata():
 
 @app.get("/api/metrics")
 def get_metrics_table():
-    """Trả về bảng đối sánh hiệu năng 6 mô hình từ file CSV."""
-    csv_path = os.path.join(METRICS_DIR, "baseline_model_comparison.csv")
-    if not os.path.exists(csv_path):
+    """Trả về bảng đối sánh hiệu năng các mô hình (ưu tiên Grand Comparison 7 mô hình gồm cả Spark MLlib)."""
+    grand_path = os.path.join(METRICS_DIR, "grand_model_comparison.csv")
+    base_path = os.path.join(METRICS_DIR, "baseline_model_comparison.csv")
+    
+    target_path = grand_path if os.path.exists(grand_path) else base_path
+    if not os.path.exists(target_path):
         return JSONResponse(content=[])
-    df = pd.read_csv(csv_path)
+    df = pd.read_csv(target_path)
     return JSONResponse(content=df.to_dict(orient="records"))
 
 @app.get("/api/figures/{filename}")

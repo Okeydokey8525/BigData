@@ -25,7 +25,7 @@
             <div class="header-actions">
                 <div class="status-pill online">
                     <span class="pulse-dot"></span>
-                    <span>FastAPI Online (6 Models Ready)</span>
+                    <span class="badge-status">FastAPI Online (7 Models Ready)</span>
                 </div>
                 <span class="badge-tag">HUIT - Nhóm 6</span>
             </div>
@@ -41,7 +41,7 @@
             </button>
             <button class="nav-tab" id="tab-btn-benchmark" onclick="switchTab('benchmark')">
                 <span class="nav-icon">📊</span>
-                <span>Đối Sánh 6 Mô Hình</span>
+                <span>Đối Sánh 7 Mô Hình (Kèm Spark)</span>
             </button>
             <button class="nav-tab" id="tab-btn-explain" onclick="switchTab('explain')">
                 <span class="nav-icon">🔍</span>
@@ -196,8 +196,8 @@
         <section id="tab-content-benchmark" class="tab-pane hidden">
             <div class="glass-card full-width">
                 <div class="card-header">
-                    <div class="card-badge">BENCHMARK EVALUATION</div>
-                    <h2 class="card-title">Bảng Đối Sánh Hiệu Năng 6 Mô Hình Hướng Thuần</h2>
+                    <div class="card-badge">BENCHMARK COMPARISON (7 MODELS)</div>
+                    <h2 class="card-title">Bảng Đối Sánh Toàn Diện: 6 Mô Hình Hướng Thuần vs Apache Spark MLlib</h2>
                     <p class="card-description">Đo đạc trên cùng tập dữ liệu mẫu 10.000 dòng có xử lý mất cân bằng lớp (class_weight='balanced') trên phần cứng AMD Ryzen 7 250 & RTX 5050.</p>
                 </div>
 
@@ -205,8 +205,8 @@
                 <div class="kpi-grid">
                     <div class="kpi-card">
                         <div class="kpi-label">Tổng số Mô hình Thử nghiệm</div>
-                        <div class="kpi-value">6 Models</div>
-                        <div class="kpi-sub">3 Cổ điển + 3 SOTA Boosted</div>
+                        <div class="kpi-value">7 Models</div>
+                        <div class="kpi-sub">3 Cổ điển + 3 SOTA + Spark Phân tán</div>
                     </div>
                     <div class="kpi-card">
                         <div class="kpi-label">Weighted F1 Cao Nhất</div>
@@ -245,9 +245,14 @@
                     </table>
                 </div>
 
-                <!-- Embedded Figure -->
+                <!-- Embedded Figures -->
                 <div class="figure-box">
-                    <h3 class="figure-title">Biểu Đồ Trực Quan Hóa Đối Sánh 4 Chiều (Benchmark Dashboard)</h3>
+                    <h3 class="figure-title">Đối Sánh Trực Diện Tối Hậu: Random Forest Đơn Máy (Scikit-Learn CPU) vs Phân Tán (Apache Spark MLlib)</h3>
+                    <img src="/api/figures/grand_rf_comparison.png" alt="Grand RF Comparison" class="figure-img" onerror="this.style.display='none'">
+                </div>
+
+                <div class="figure-box" style="margin-top: 1.5rem;">
+                    <h3 class="figure-title">Biểu Đồ Trực Quan Hóa Đối Sánh 4 Chiều 6 Mô Hình Baseline (Benchmark Dashboard)</h3>
                     <img src="/api/figures/baseline_comparison_dashboard.png" alt="Baseline Comparison Dashboard" class="figure-img" onerror="this.style.display='none'">
                 </div>
             </div>

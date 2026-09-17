@@ -8,34 +8,38 @@
 
 ## 1. TRẠNG THÁI HIỆN TẠI (CURRENT STATE)
 
-* **Cập nhật lần cuối:** `2026-09-17 17:10:00 (GMT+7)`
-* **Giai đoạn hiện tại:** **Giai đoạn 5 - Hoàn thành Xây dựng Web Application Bằng Python (FastAPI + Modern Dashboard)**
-* **Trạng thái công việc:** Ứng dụng Web hoàn chỉnh bằng Python (FastAPI) đã được xây dựng, kiểm thử 100% các endpoint thành công và đang chạy trực tiếp tại `http://127.0.0.1:8000` phục vụ dự đoán nguyên nhân trễ chuyến bay thời gian thực và trình chiếu đồ án.
+* **Cập nhật lần cuối:** `2026-09-17 17:18:00 (GMT+7)`
+* **Giai đoạn hiện tại:** **Giai đoạn 3 & 5 - Hoàn thành Huấn luyện Spark MLlib Phân Tán, Lưu Trữ Mô Hình & Tích Hợp Web Dashboard 7 Mô Hình**
+* **Trạng thái công việc:** 
+  1. Mô hình Spark MLlib Random Forest phân tán đã hoàn thành huấn luyện, giải quyết triệt để lỗi winutils trên Windows bằng bộ nhị phân cấu hình tự động.
+  2. Toàn bộ trọng số mô hình Spark đã được lưu vào `models/spark/spark_rf_model/` (kèm metadata và feature importances).
+  3. Bảng đối sánh tối hậu 7 mô hình (`results/metrics/grand_model_comparison.csv`) và đồ thị đối kháng trực diện Random Forest CPU vs Spark MLlib (`results/figures/grand_rf_comparison.png`) đã được tạo tự động.
+  4. Web Application bằng Python (FastAPI + Modern Dashboard) đang chạy tại `http://127.0.0.1:8000` hiển thị đầy đủ cả 7 mô hình và 2 đồ thị trực quan.
 
 ### 1.1. Việc vừa hoàn thành (Just Completed)
-* [x] Cài đặt các gói phụ thuộc Web vào môi trường ảo `venv`: `fastapi 0.141.1`, `uvicorn 0.53.0`, `jinja2 3.1.6`, `aiofiles 25.1.0`, `httpx 0.28.1`.
-* [x] Lập trình script trích xuất danh mục và bộ mã hóa [`src/etl/export_metadata.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/etl/export_metadata.py): Xuất tệp `encoders.joblib` và `metadata.json` (chứa 15 hãng hàng không và 310 sân bay).
-* [x] Xây dựng Backend Server tốc độ cao [`src/serving/app.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/app.py):
-  * Tự động nạp sẵn 6 mô hình vào bộ nhớ RAM khi khởi động.
-  * Cung cấp các API: `GET /` (Trang chủ), `GET /api/metadata`, `GET /api/metrics`, `GET /api/figures/{filename}`, `POST /api/predict`.
-* [x] Thiết kế giao diện Frontend Dashboard hiện đại theo chuẩn thẩm mỹ hàng không:
-  * [`src/serving/templates/index.html`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/templates/index.html): HTML5 ngữ nghĩa với 4 Tab (Dự đoán trực tiếp, Bảng đối sánh 6 mô hình, Giải thích mô hình & biểu đồ, Thông tin đồ án).
-  * [`src/serving/static/style.css`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/static/style.css): Dark Mode Glassmorphism (`#080C16`), font Google Inter, hiệu ứng ánh sáng neon, thanh tiến trình xác suất động.
-  * [`src/serving/static/app.js`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/static/app.js): Xử lý AJAX/Fetch gọi API tức thì, đổi tab mượt mà, chuyển đổi ma trận nhầm lẫn linh hoạt.
-* [x] Kiểm thử tự động 100% các API qua script `scratch/test_api.py`: Độ trễ suy luận đạt ~50ms, kết quả phân loại chuẩn xác.
-* [x] Khởi động Web Server daemon thành công tại `http://127.0.0.1:8000` (Swagger UI: `http://127.0.0.1:8000/docs`).
+* [x] Cấu hình `winutils.exe` và `hadoop.dll` cho môi trường Windows, giải quyết triệt để lỗi ghi native Parquet/Hadoop của Spark MLlib.
+* [x] Nâng cấp script [`src/spark_ml/pipeline.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/spark_ml/pipeline.py):
+  * Huấn luyện Spark Random Forest (50 cây, maxDepth=10, maxBins=512) phân tán trên RDD partitions.
+  * Tự động lưu `feature_pipeline_model` và `rf_model` bằng Spark native writer.
+  * Trích xuất tầm quan trọng đặc trưng (Feature Importance) và lưu `spark_rf_metadata.json`.
+  * Xuất số liệu `spark_metrics.csv` và `spark_summary.json`.
+  * Tự động gộp bảng đối sánh tổng thể 7 mô hình: `grand_model_comparison.csv`.
+  * Vẽ biểu đồ khoa học đối đầu trực diện 300 DPI: `results/figures/grand_rf_comparison.png`.
+* [x] Cập nhật Backend [`src/serving/app.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/app.py) và Giao diện [`src/serving/templates/index.html`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/templates/index.html):
+  * Web Dashboard tự động phục vụ bảng đối sánh 7 mô hình (3 mô hình cổ điển, 3 mô hình SOTA GBDT, 1 mô hình Spark MLlib phân tán).
+  * Hiển thị trực tiếp biểu đồ đối đầu RF Showdown trong tab Model Benchmark.
+* [x] Đã commit và push mã nguồn Web App lên GitHub `https://github.com/Okeydokey8525/BigData.git`.
 
 ### 1.2. Việc đang tiến hành (In Progress)
-* [ ] Đồng bộ toàn bộ mã nguồn Web lên GitHub repository (`origin main`).
-* [ ] Hoàn thiện đối sánh Hướng Spark MLlib (Lưu mô hình Spark và tạo bảng Grand Comparison).
+* [ ] Đồng bộ các cập nhật của Hướng Spark MLlib và biểu đồ đối sánh mới lên GitHub repository (`origin main`).
+* [ ] Chuẩn bị Feature Engineering nâng cao (tính tỷ lệ trễ lịch sử theo hãng bay, chỉ số tắc nghẽn sân bay).
 
 ### 1.3. VIỆC TIẾP THEO CẦN LÀM NGAY (NEXT IMMEDIATE TASKS CHO AI KẾ TIẾP)
 Bất kỳ AI Agent nào tiếp nhận yêu cầu tiếp theo, hãy thực hiện theo thứ tự ưu tiên sau:
 
-1. **Ưu tiên 1:** Đẩy commit mới lên GitHub: `git add .`, `git commit`, `git push origin main`.
-2. **Ưu tiên 2:** Hoàn thiện lưu trữ mô hình Spark MLlib (`models/spark/spark_rf_model`) và lập bảng đối sánh tối hậu giữa Random Forest Đơn Máy (Scikit-Learn) vs Random Forest Phân Tán (Apache Spark).
-3. **Ưu tiên 3:** Bổ sung Feature Engineering vào `src/etl/feature_engineering.py` (tỷ lệ trễ lịch sử theo hãng bay, chỉ số tắc nghẽn sân bay).
-4. **Ưu tiên 4:** Hướng dẫn nhóm chạy thực nghiệm full 7.07 triệu dòng trên Kaggle Cloud GPU T4.
+1. **Ưu tiên 1:** Đẩy commit mới (Spark MLlib Pipeline, Grand Comparison, Web Update) lên GitHub `origin main`.
+2. **Ưu tiên 2:** Bổ sung Feature Engineering vào `src/etl/feature_engineering.py` (tính carrier_delay_rate, origin_congestion_index, route_risk) để cải thiện điểm Macro F1 cho các nguyên nhân trễ hiếm gặp.
+3. **Ưu tiên 3:** Hướng dẫn nhóm kích hoạt notebook `notebooks/02_kaggle_distributed_training.ipynb` trên Kaggle Cloud GPU T4 để mở rộng quy mô lên toàn bộ 7.07 triệu dòng dữ liệu.
 
 ---
 
@@ -45,6 +49,7 @@ Bất kỳ AI Agent nào tiếp nhận yêu cầu tiếp theo, hãy thực hiệ
 
 | Thời gian | Tác nhân (AI/Dev) | Nội dung công việc đã hoàn thành | Tệp tin tạo mới / Chỉnh sửa | Ghi chú & Đánh giá |
 | :--- | :--- | :--- | :--- | :--- |
+| `2026-09-17 17:18` | Antigravity AI | Nâng cấp Spark MLlib Pipeline hoàn chỉnh: Tự động lưu mô hình Spark, khắc phục winutils trên Windows, xuất bảng Grand Comparison 7 mô hình, tạo biểu đồ RF Showdown và cập nhật Web Dashboard | `src/spark_ml/pipeline.py`<br>`models/spark/*`<br>`results/metrics/grand_model_comparison.csv`<br>`results/figures/grand_rf_comparison.png`<br>`src/serving/app.py`<br>`src/serving/templates/index.html`<br>`.gitignore` | Hoàn thành toàn diện Giai đoạn 3 & Tích hợp Web 7 mô hình |
 | `2026-09-17 17:10` | Antigravity AI | Xây dựng hoàn chỉnh Web Application bằng Python (FastAPI + Modern Glassmorphic Dashboard), kiểm thử 6/6 API đạt 100%, server đang chạy tại http://127.0.0.1:8000 | `src/serving/app.py`<br>`src/serving/templates/*`<br>`src/serving/static/*`<br>`src/etl/export_metadata.py`<br>`requirements.txt` | Hoàn thành Giai đoạn 5 Web App |
 | `2026-09-17 16:45` | Antigravity AI | Huấn luyện thành công toàn bộ 6 mô hình Hướng Thuần (có class_weight='balanced'), tự động lưu 7 models/scalers, xuất CSV/JSON và 12 biểu đồ PNG chất lượng cao | `src/baseline/run_all_baseline.py`<br>`models/baseline/*`<br>`results/metrics/*`<br>`results/figures/*`<br>`.gitignore`<br>`requirements.txt` | Hoàn thành 100% Giai đoạn 2 Hướng Thuần |
 | `2026-09-17 15:38` | Antigravity AI | Lập trình xong toàn bộ khung ETL, Baseline ML, Spark MLlib phân tán, sửa lỗi maxBins=512 cho sân bay, tạo 2 Jupyter Notebooks (EDA & Kaggle) | `src/etl/*`<br>`src/baseline/*`<br>`src/spark_ml/*`<br>`src/utils/*`<br>`notebooks/*`<br>`docker/*`<br>`requirements.txt` | Toàn bộ script đã chạy thử nghiệm thành công 100% trên máy Local |
