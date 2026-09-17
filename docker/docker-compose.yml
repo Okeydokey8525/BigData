@@ -1,0 +1,90 @@
+version: '3.8'
+
+services:
+  # ==========================================
+  # 1. HADOOP HDFS STORAGE CLUSTER
+  # ==========================================
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: bigdata-namenode
+    restart: always
+    environment:
+      - CLUSTER_NAME=flight-delay-cluster
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    ports:
+      - "9870:9870" # HDFS NameNode Web UI
+      - "9000:9000" # HDFS RPC Port
+    volumes:
+      - hadoop_namenode:/hadoop/dfs/name
+
+  datanode:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: bigdata-datanode
+    restart: always
+    environment:
+      - SERVICE_PRECONDITION=namenode:9870
+      - CORE_CONF_fs_defaultFS=hdfs://namenode:9000
+    ports:
+      - "9864:9864" # HDFS DataNode Web UI
+    volumes:
+      - hadoop_datanode:/hadoop/dfs/data
+    depends_on:
+      - namenode
+
+  # ==========================================
+  # 2. APACHE SPARK CLUSTER
+  # ==========================================
+  spark-master:
+    image: bitnami/spark:3.5
+    container_name: bigdata-spark-master
+    restart: always
+    environment:
+      - SPARK_MODE=master
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - "8080:8080" # Spark Master Web UI
+      - "7077:7077" # Spark Master Port
+    volumes:
+      - ../:/opt/workspace
+
+  spark-worker:
+    image: bitnami/spark:3.5
+    container_name: bigdata-spark-worker
+    restart: always
+    environment:
+      - SPARK_MODE=worker
+      - SPARK_MASTER_URL=spark://spark-master:7077
+      - SPARK_WORKER_MEMORY=3G
+      - SPARK_WORKER_CORES=4
+      - SPARK_RPC_AUTHENTICATION_ENABLED=no
+      - SPARK_RPC_ENCRYPTION_ENABLED=no
+      - SPARK_LOCAL_STORAGE_ENCRYPTION_ENABLED=no
+      - SPARK_SSL_ENABLED=no
+    ports:
+      - "8081:8081" # Spark Worker Web UI
+    volumes:
+      - ../:/opt/workspace
+    depends_on:
+      - spark-master
+
+  # ==========================================
+  # 3. MONGODB SERVING DATABASE
+  # ==========================================
+  mongodb:
+    image: mongo:6.0
+    container_name: bigdata-mongodb
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+    environment:
+      - MONGO_INITDB_DATABASE=flight_delay_db
+
+volumes:
+  hadoop_namenode:
+  hadoop_datanode:
+  mongo_data:

@@ -8,29 +8,33 @@
 
 ## 1. TRẠNG THÁI HIỆN TẠI (CURRENT STATE)
 
-* **Cập nhật lần cuối:** `2026-09-16 17:35:00 (GMT+7)`
-* **Giai đoạn hiện tại:** **Tuần 2-3 - Khởi tạo dự án, phân định 2 hướng Thuần vs Spark & Lập Master Execution Plan**
-* **Trạng thái công việc:** Sẵn sàng bước vào Giai đoạn 1 của Master Plan (Tạo cấu trúc code `src/` và môi trường ảo `venv`).
+* **Cập nhật lần cuối:** `2026-09-17 15:38:00 (GMT+7)`
+* **Giai đoạn hiện tại:** **Giai đoạn 1 & 2 - Hoàn thành khung Source Code ETL, Baseline ML, Spark MLlib và Bộ Notebooks Thực nghiệm**
+* **Trạng thái công việc:** Toàn bộ pipeline ETL, Baseline ML và Spark MLlib đã được kiểm thử chạy thành công 100% trên dữ liệu mẫu với Java 17; Sẵn sàng đồng bộ lên GitHub và đẩy lên Kaggle để huấn luyện toàn bộ 7.07M dòng.
 
 ### 1.1. Việc vừa hoàn thành (Just Completed)
-* [x] Đã đo đạc thực tế 100% cấu hình phần cứng máy Local: CPU AMD Ryzen 7 250 (8C/16T), RAM 16GB (khả dụng ~4.2GB), GPU NVIDIA RTX 5050 Laptop, SSD C: trống 71.9GB.
-* [x] Đã phân tích chi tiết bản chất yêu cầu của GVHD về **2 hướng song song (Hướng Thuần vs Hướng Spark)**.
-* [x] Đã so sánh đối chứng toàn diện giữa **Máy Local vs Kaggle Cloud 2x Tesla T4 (30GB RAM)** $\to$ Xác lập chiến lược chạy Hybrid (Dev local $\to$ Train full trên Kaggle).
-* [x] Đã khởi tạo các tài liệu chiến lược theo chuẩn [`nguyen-tac-lam-viec-dai.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/nguyen-tac-lam-viec-dai.md):
-  * [`00_AI_READ_FIRST.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/00_AI_READ_FIRST.md): Chỉ mục điều hướng tri thức cho AI.
-  * [`08_HARDWARE_AND_ENVIRONMENT_SPECS.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/08_HARDWARE_AND_ENVIRONMENT_SPECS.md): Thông số phần cứng đo đạc thực tế.
-  * [`09_DUAL_APPROACH_PLAN.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/09_DUAL_APPROACH_PLAN.md): Phương pháp luận giải trình 2 hướng Thuần vs Spark.
-  * [`10_MASTER_EXECUTION_PLAN.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/10_MASTER_EXECUTION_PLAN.md): Lộ trình 6 giai đoạn chi tiết từ A-Z.
+* [x] Đã khởi tạo môi trường ảo Python `venv` (Python 3.13.14) và cài đặt đầy đủ các thư viện cốt lõi: `pyspark 4.2.0`, `pyarrow`, `scikit-learn`, `pandas`, `numpy`, `matplotlib`, `seaborn`.
+* [x] Đã tạo tệp cấu hình phụ thuộc [`requirements.txt`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/requirements.txt) và [`docker/docker-compose.yml`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/docker/docker-compose.yml) (Spark Master/Worker + HDFS + MongoDB).
+* [x] Đã lập trình và kiểm thử thành công [`src/etl/clean_data.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/etl/clean_data.py): Lọc bỏ chuyến bay hủy/chuyển hướng, gán nhãn 6 nhóm nguyên nhân trễ chuẩn BTS, xuất `cleaned_sample.parquet` (9.836 dòng hợp lệ).
+* [x] Đã lập trình và kiểm thử thành công [`src/etl/to_parquet.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/etl/to_parquet.py): Phân vùng Parquet theo `month`, đạt tỷ lệ nén 49.97%.
+* [x] Đã lập trình module chuẩn hóa đánh giá [`src/utils/metrics.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/utils/metrics.py): Tính Accuracy, Precision, Recall, F1-Score đa lớp và đo độ trễ huấn luyện/dự báo.
+* [x] Đã lập trình và kiểm thử thành công [`src/baseline/train_baseline.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/baseline/train_baseline.py): Huấn luyện Logistic Regression, Decision Tree, Random Forest CPU (Accuracy ~78.4%).
+* [x] Đã lập trình và kiểm thử thành công [`src/spark_ml/pipeline.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/spark_ml/pipeline.py): Pipeline phân tán trên PySpark (`StringIndexer` -> `VectorAssembler` -> `RandomForestClassifier`), cấu hình `maxBins=512` xử lý mã sân bay phân loại cao, chạy hoàn tất trong 14.87s với OpenJDK 17.
+* [x] Đã khởi tạo 2 Jupyter Notebooks chuẩn mực:
+  * [`notebooks/01_eda_sample.ipynb`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/notebooks/01_eda_sample.ipynb): Phân tích khám phá dữ liệu, vẽ biểu đồ phân bố trễ cho Chương 3 báo cáo.
+  * [`notebooks/02_kaggle_distributed_training.ipynb`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/notebooks/02_kaggle_distributed_training.ipynb): Mẫu chạy thực nghiệm trên Kaggle Cloud cho 3 thành viên nhóm (huấn luyện 7.07M dòng trên 2x Tesla T4).
 
 ### 1.2. Việc đang tiến hành (In Progress)
-* [ ] Thiết lập môi trường ảo Python `venv` trên máy cục bộ và tạo khung thư mục mã nguồn (`src/`, `notebooks/`, `docker/`).
+* [ ] Đồng bộ toàn bộ mã nguồn `src/`, `notebooks/`, `docker/` lên GitHub repository (`origin main`).
+* [ ] Chuẩn bị huấn luyện quy mô lớn trên Kaggle (7.07 triệu dòng).
 
 ### 1.3. VIỆC TIẾP THEO CẦN LÀM NGAY (NEXT IMMEDIATE TASKS CHO AI KẾ TIẾP)
 Bất kỳ AI Agent nào tiếp nhận yêu cầu tiếp theo, hãy thực hiện theo thứ tự ưu tiên sau:
 
-1. **Ưu tiên 1:** Tạo môi trường ảo Python (`venv`) và cài đặt các thư viện cơ bản (`pyspark`, `pandas`, `pyarrow`, `scikit-learn`).
-2. **Ưu tiên 2:** Tạo khung các thư mục dự án (`src/etl/`, `src/baseline/`, `src/spark_ml/`, `notebooks/`, `docker/`).
-3. **Ưu tiên 3:** Viết script tiền xử lý đầu tiên `src/etl/clean_data.py` chạy thử nghiệm trên tệp mẫu `flight_data_2024_sample.csv` để chuẩn hóa nhãn `delay_cause`.
+1. **Ưu tiên 1:** Đẩy commit mới lên GitHub: `git add .`, `git commit`, `git push origin main`.
+2. **Ưu tiên 2:** Mở notebook trên Kaggle hoặc hướng dẫn nhóm tải notebook `notebooks/02_kaggle_distributed_training.ipynb` lên Kaggle để chạy 7.07M dòng trên GPU T4.
+3. **Ưu tiên 3:** Bổ sung Feature Engineering vào `src/etl/feature_engineering.py` (tính tỷ lệ trễ lịch sử hãng bay, độ tắc nghẽn sân bay) để nâng cao F1-score cho các lớp thiểu số.
+4. **Ưu tiên 4:** Viết khung Web API FastAPI (`src/serving/api.py`) kết nối MongoDB và load mô hình đã lưu.
 
 ---
 
@@ -40,6 +44,7 @@ Bất kỳ AI Agent nào tiếp nhận yêu cầu tiếp theo, hãy thực hiệ
 
 | Thời gian | Tác nhân (AI/Dev) | Nội dung công việc đã hoàn thành | Tệp tin tạo mới / Chỉnh sửa | Ghi chú & Đánh giá |
 | :--- | :--- | :--- | :--- | :--- |
+| `2026-09-17 15:38` | Antigravity AI | Lập trình xong toàn bộ khung ETL, Baseline ML, Spark MLlib phân tán, sửa lỗi maxBins=512 cho sân bay, tạo 2 Jupyter Notebooks (EDA & Kaggle) | `src/etl/*`<br>`src/baseline/*`<br>`src/spark_ml/*`<br>`src/utils/*`<br>`notebooks/*`<br>`docker/*`<br>`requirements.txt` | Toàn bộ script đã chạy thử nghiệm thành công 100% trên máy Local |
 | `2026-09-17 14:04` | Antigravity AI | Khởi tạo Git repo, cấu hình `.gitignore` chặn file 1.3GB, tạo `README.md` gốc và push lên GitHub | `.gitignore`<br>`README.md`<br>`doc/05_WORKLOG_AND_HANDOVER.md` | Đã push thành công lên https://github.com/Okeydokey8525/BigData |
 | `2026-09-16 17:48` | Antigravity AI | Cập nhật hệ thống 6 mô hình (LR, DT, RF, LightGBM, CatBoost, XGBoost) & Chiến lược cộng tác 3 người (Git-Kaggle-Local) | `doc/02_ARCHITECTURE_AND_TECHSTACK.md`<br>`doc/07_EXPERIMENT_AND_EVALUATION_METRICS.md`<br>`doc/09_DUAL_APPROACH_PLAN.md`<br>`doc/10_MASTER_EXECUTION_PLAN.md` | Hoàn thiện ma trận RACI và phản biện Kaggle vs Local |
 | `2026-09-16 17:35` | Antigravity AI | Đo đạc phần cứng máy Local, phân tích 2 hướng Thuần vs Spark và lập Master Execution Plan | `doc/00_AI_READ_FIRST.md`<br>`doc/08_HARDWARE_AND_ENVIRONMENT_SPECS.md`<br>`doc/09_DUAL_APPROACH_PLAN.md`<br>`doc/10_MASTER_EXECUTION_PLAN.md`<br>`doc/05_WORKLOG_AND_HANDOVER.md` | Bám sát `nguyen-tac-lam-viec-dai.md` và phản hồi của GVHD |
