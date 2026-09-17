@@ -40,8 +40,10 @@ Bất kỳ AI Agent nào tiếp nhận yêu cầu tiếp theo, hãy thực hiệ
 
 | Thời gian | Tác nhân (AI/Dev) | Nội dung công việc đã hoàn thành | Tệp tin tạo mới / Chỉnh sửa | Ghi chú & Đánh giá |
 | :--- | :--- | :--- | :--- | :--- |
+| `2026-09-17 14:04` | Antigravity AI | Khởi tạo Git repo, cấu hình `.gitignore` chặn file 1.3GB, tạo `README.md` gốc và push lên GitHub | `.gitignore`<br>`README.md`<br>`doc/05_WORKLOG_AND_HANDOVER.md` | Đã push thành công lên https://github.com/Okeydokey8525/BigData |
 | `2026-09-16 17:48` | Antigravity AI | Cập nhật hệ thống 6 mô hình (LR, DT, RF, LightGBM, CatBoost, XGBoost) & Chiến lược cộng tác 3 người (Git-Kaggle-Local) | `doc/02_ARCHITECTURE_AND_TECHSTACK.md`<br>`doc/07_EXPERIMENT_AND_EVALUATION_METRICS.md`<br>`doc/09_DUAL_APPROACH_PLAN.md`<br>`doc/10_MASTER_EXECUTION_PLAN.md` | Hoàn thiện ma trận RACI và phản biện Kaggle vs Local |
 | `2026-09-16 17:35` | Antigravity AI | Đo đạc phần cứng máy Local, phân tích 2 hướng Thuần vs Spark và lập Master Execution Plan | `doc/00_AI_READ_FIRST.md`<br>`doc/08_HARDWARE_AND_ENVIRONMENT_SPECS.md`<br>`doc/09_DUAL_APPROACH_PLAN.md`<br>`doc/10_MASTER_EXECUTION_PLAN.md`<br>`doc/05_WORKLOG_AND_HANDOVER.md` | Bám sát `nguyen-tac-lam-viec-dai.md` và phản hồi của GVHD |
+
 
 | `2026-09-16 15:56` | Antigravity AI | Bổ sung cột nghĩa tiếng Việt `meaning_vi` vào Data Dictionary | [`flight_data_2024_data_dictionary.csv`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Flight%20Delay%20Dataset%20%E2%80%94%202024/flight_data_2024_data_dictionary.csv) | Đã mã hóa UTF-8-BOM chuẩn tiếng Việt, đủ 35 cột |
 | `2026-09-16 15:47` | Antigravity AI | Khởi tạo trọn bộ tài liệu kiến trúc, đặc tả dữ liệu và quy chuẩn AI | `doc/README.md`<br>`doc/01_DATASET_SPECIFICATION.md`<br>`doc/02_ARCHITECTURE_AND_TECHSTACK.md`<br>`doc/03_ROADMAP_AND_TASKS.md`<br>`doc/04_AI_AGENT_GUIDELINES.md` | Bám sát đề cương Word của Nhóm 6 (TS. Phan Hồ Viết Trường) |
