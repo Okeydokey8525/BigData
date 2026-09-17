@@ -8,34 +8,34 @@
 
 ## 1. TRẠNG THÁI HIỆN TẠI (CURRENT STATE)
 
-* **Cập nhật lần cuối:** `2026-09-17 16:45:00 (GMT+7)`
-* **Giai đoạn hiện tại:** **Giai đoạn 2 - Hoàn thành Thực nghiệm Toàn diện 6 Mô hình Hướng Thuần & Cơ chế Lưu Trữ Tự Động**
-* **Trạng thái công việc:** Đã hoàn thành 100% huấn luyện và đối sánh 6 mô hình Hướng Thuần (LR, DT, RF CPU, LightGBM, CatBoost, XGBoost) trên tập mẫu 10.000 dòng có xử lý mất cân bằng lớp (`class_weight='balanced'`). Toàn bộ trọng số mô hình, bảng số liệu CSV/JSON và 12 biểu đồ trực quan đã được tự động xuất lưu vào `models/baseline/`, `results/metrics/`, `results/figures/`.
+* **Cập nhật lần cuối:** `2026-09-17 17:10:00 (GMT+7)`
+* **Giai đoạn hiện tại:** **Giai đoạn 5 - Hoàn thành Xây dựng Web Application Bằng Python (FastAPI + Modern Dashboard)**
+* **Trạng thái công việc:** Ứng dụng Web hoàn chỉnh bằng Python (FastAPI) đã được xây dựng, kiểm thử 100% các endpoint thành công và đang chạy trực tiếp tại `http://127.0.0.1:8000` phục vụ dự đoán nguyên nhân trễ chuyến bay thời gian thực và trình chiếu đồ án.
 
 ### 1.1. Việc vừa hoàn thành (Just Completed)
-* [x] Cài đặt thành công các thư viện học máy hiện đại: `lightgbm 4.7.0`, `xgboost 3.4.1`, `catboost 1.2.10`, `psutil 7.2.2`, `joblib 1.6.0` vào môi trường ảo `venv`.
-* [x] Khởi tạo hệ thống thư mục lưu trữ kết quả phân tầng:
-  * `models/baseline/`: Lưu trữ 7 tệp mô hình và scaler `.joblib`.
-  * `results/metrics/`: Lưu trữ `baseline_model_comparison.csv` và `baseline_summary.json`.
-  * `results/figures/`: Lưu trữ 12 ảnh đồ thị khoa học 300 DPI (Dashboard đối sánh, Confusion Matrix, Feature Importance).
-* [x] Lập trình script điều phối Master [`src/baseline/run_all_baseline.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/baseline/run_all_baseline.py): Tự động hóa quy trình Train -> Evaluate -> Measure RAM/Time -> Save Models -> Export Metrics & Plots.
-* [x] Thực thi kiểm thử và thu thập số liệu thực nghiệm:
-  * **Random Forest CPU (Scikit-Learn):** Huấn luyện trong 0.222s, Accuracy `56.86%`, Weighted F1 `60.90%`, Macro F1 `18.28%`.
-  * **LightGBM:** Huấn luyện trong 0.357s, Accuracy `55.13%`, Weighted F1 `60.18%`, Macro F1 `20.32%`.
-  * **XGBoost:** Huấn luyện trong 0.693s, Accuracy `48.07%`, Weighted F1 `55.28%`, Macro F1 `20.57%`.
-* [x] Cập nhật `.gitignore` loại trừ `catboost_info/` và các tệp `.joblib` nặng, giữ lại thư mục `results/` để đồng bộ lên GitHub.
+* [x] Cài đặt các gói phụ thuộc Web vào môi trường ảo `venv`: `fastapi 0.141.1`, `uvicorn 0.53.0`, `jinja2 3.1.6`, `aiofiles 25.1.0`, `httpx 0.28.1`.
+* [x] Lập trình script trích xuất danh mục và bộ mã hóa [`src/etl/export_metadata.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/etl/export_metadata.py): Xuất tệp `encoders.joblib` và `metadata.json` (chứa 15 hãng hàng không và 310 sân bay).
+* [x] Xây dựng Backend Server tốc độ cao [`src/serving/app.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/app.py):
+  * Tự động nạp sẵn 6 mô hình vào bộ nhớ RAM khi khởi động.
+  * Cung cấp các API: `GET /` (Trang chủ), `GET /api/metadata`, `GET /api/metrics`, `GET /api/figures/{filename}`, `POST /api/predict`.
+* [x] Thiết kế giao diện Frontend Dashboard hiện đại theo chuẩn thẩm mỹ hàng không:
+  * [`src/serving/templates/index.html`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/templates/index.html): HTML5 ngữ nghĩa với 4 Tab (Dự đoán trực tiếp, Bảng đối sánh 6 mô hình, Giải thích mô hình & biểu đồ, Thông tin đồ án).
+  * [`src/serving/static/style.css`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/static/style.css): Dark Mode Glassmorphism (`#080C16`), font Google Inter, hiệu ứng ánh sáng neon, thanh tiến trình xác suất động.
+  * [`src/serving/static/app.js`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/static/app.js): Xử lý AJAX/Fetch gọi API tức thì, đổi tab mượt mà, chuyển đổi ma trận nhầm lẫn linh hoạt.
+* [x] Kiểm thử tự động 100% các API qua script `scratch/test_api.py`: Độ trễ suy luận đạt ~50ms, kết quả phân loại chuẩn xác.
+* [x] Khởi động Web Server daemon thành công tại `http://127.0.0.1:8000` (Swagger UI: `http://127.0.0.1:8000/docs`).
 
 ### 1.2. Việc đang tiến hành (In Progress)
-* [ ] Đồng bộ mã nguồn và kết quả (`results/`) lên GitHub repository (`origin main`).
-* [ ] Chuẩn bị bước Feature Engineering nâng cao (tỷ lệ trễ lịch sử theo hãng bay, chỉ số tắc nghẽn sân bay).
+* [ ] Đồng bộ toàn bộ mã nguồn Web lên GitHub repository (`origin main`).
+* [ ] Hoàn thiện đối sánh Hướng Spark MLlib (Lưu mô hình Spark và tạo bảng Grand Comparison).
 
 ### 1.3. VIỆC TIẾP THEO CẦN LÀM NGAY (NEXT IMMEDIATE TASKS CHO AI KẾ TIẾP)
 Bất kỳ AI Agent nào tiếp nhận yêu cầu tiếp theo, hãy thực hiện theo thứ tự ưu tiên sau:
 
 1. **Ưu tiên 1:** Đẩy commit mới lên GitHub: `git add .`, `git commit`, `git push origin main`.
-2. **Ưu tiên 2:** Chạy thử nghiệm trên Kaggle đối với toàn bộ 7.07 triệu dòng sử dụng notebook [`notebooks/02_kaggle_distributed_training.ipynb`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/notebooks/02_kaggle_distributed_training.ipynb).
-3. **Ưu tiên 3:** Bổ sung Feature Engineering vào `src/etl/feature_engineering.py` để kéo chỉ số Macro F1 lên cao hơn.
-4. **Ưu tiên 4:** Xây dựng Web API FastAPI nạp các tệp `.joblib` từ `models/baseline/` để demo giao diện người dùng.
+2. **Ưu tiên 2:** Hoàn thiện lưu trữ mô hình Spark MLlib (`models/spark/spark_rf_model`) và lập bảng đối sánh tối hậu giữa Random Forest Đơn Máy (Scikit-Learn) vs Random Forest Phân Tán (Apache Spark).
+3. **Ưu tiên 3:** Bổ sung Feature Engineering vào `src/etl/feature_engineering.py` (tỷ lệ trễ lịch sử theo hãng bay, chỉ số tắc nghẽn sân bay).
+4. **Ưu tiên 4:** Hướng dẫn nhóm chạy thực nghiệm full 7.07 triệu dòng trên Kaggle Cloud GPU T4.
 
 ---
 
@@ -45,6 +45,7 @@ Bất kỳ AI Agent nào tiếp nhận yêu cầu tiếp theo, hãy thực hiệ
 
 | Thời gian | Tác nhân (AI/Dev) | Nội dung công việc đã hoàn thành | Tệp tin tạo mới / Chỉnh sửa | Ghi chú & Đánh giá |
 | :--- | :--- | :--- | :--- | :--- |
+| `2026-09-17 17:10` | Antigravity AI | Xây dựng hoàn chỉnh Web Application bằng Python (FastAPI + Modern Glassmorphic Dashboard), kiểm thử 6/6 API đạt 100%, server đang chạy tại http://127.0.0.1:8000 | `src/serving/app.py`<br>`src/serving/templates/*`<br>`src/serving/static/*`<br>`src/etl/export_metadata.py`<br>`requirements.txt` | Hoàn thành Giai đoạn 5 Web App |
 | `2026-09-17 16:45` | Antigravity AI | Huấn luyện thành công toàn bộ 6 mô hình Hướng Thuần (có class_weight='balanced'), tự động lưu 7 models/scalers, xuất CSV/JSON và 12 biểu đồ PNG chất lượng cao | `src/baseline/run_all_baseline.py`<br>`models/baseline/*`<br>`results/metrics/*`<br>`results/figures/*`<br>`.gitignore`<br>`requirements.txt` | Hoàn thành 100% Giai đoạn 2 Hướng Thuần |
 | `2026-09-17 15:38` | Antigravity AI | Lập trình xong toàn bộ khung ETL, Baseline ML, Spark MLlib phân tán, sửa lỗi maxBins=512 cho sân bay, tạo 2 Jupyter Notebooks (EDA & Kaggle) | `src/etl/*`<br>`src/baseline/*`<br>`src/spark_ml/*`<br>`src/utils/*`<br>`notebooks/*`<br>`docker/*`<br>`requirements.txt` | Toàn bộ script đã chạy thử nghiệm thành công 100% trên máy Local |
 | `2026-09-17 14:04` | Antigravity AI | Khởi tạo Git repo, cấu hình `.gitignore` chặn file 1.3GB, tạo `README.md` gốc và push lên GitHub | `.gitignore`<br>`README.md`<br>`doc/05_WORKLOG_AND_HANDOVER.md` | Đã push thành công lên https://github.com/Okeydokey8525/BigData |

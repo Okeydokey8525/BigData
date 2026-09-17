@@ -34,6 +34,7 @@ catboost_info/
 
 # 4. TRAINED MODELS / ARTIFACTS
 models/
+!models/baseline/metadata.json
 *.pkl
 *.joblib
 *.h5
