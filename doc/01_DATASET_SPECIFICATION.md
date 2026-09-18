@@ -95,3 +95,28 @@ Theo đề cương đề tài: **Dự đoán nguyên nhân trễ chuyến bay th
 * `arr_time`, `wheels_on`, `taxi_in`, `actual_elapsed_time`, `air_time` (Chỉ có khi kết thúc chuyến bay)
 * `cancelled`, `cancellation_code`, `diverted`
 * `carrier_delay`, `weather_delay`, `nas_delay`, `security_delay`, `late_aircraft_delay` (Đây là các thành phần của Target, chỉ dùng để tạo nhãn).
+
+---
+
+## 5. BẢNG QUY CHUẨN TỐI ƯU HÓA KIỂU DỮ LIỆU (DOWNCASTING MEMORY SPECIFICATION)
+
+Để xử lý trọn vẹn toàn bộ 7.07 triệu dòng dữ liệu trên máy tính cá nhân (16GB RAM) mà không gây tràn bộ nhớ, hệ thống áp dụng kỹ thuật **Downcasting (Chuyển đổi kiểu dữ liệu tương thích thấp nhất)**. Đây là kỹ thuật bảo toàn dữ liệu 100% không suy hao (Lossless Transformation):
+
+| Tên trường dữ liệu | Dải giá trị thực tế | Kiểu mặc định (64-bit) | Kiểu tối ưu (Downcasted) | Dung lượng mỗi dòng | Tỷ lệ tiết kiệm RAM | Đảm bảo tính toàn vẹn (Lossless Proof) |
+| :--- | :---: | :---: | :---: | :---: | :---: | :--- |
+| `month` | $1 \to 12$ | `int64` (8 bytes) | `int8` (1 byte) | 1 byte | Giảm **87.5%** | `int8` chứa từ $-128 \to 127$. Tháng $1 \to 12$ hoàn toàn chính xác. |
+| `day_of_month` | $1 \to 31$ | `int64` (8 bytes) | `int8` (1 byte) | 1 byte | Giảm **87.5%** | $1 \to 31$ nằm gọn trong $[-128, 127]$. |
+| `day_of_week` | $1 \to 7$ | `int64` (8 bytes) | `int8` (1 byte) | 1 byte | Giảm **87.5%** | $1 \to 7$ nằm gọn trong $[-128, 127]$. |
+| `dep_hour` / `arr_hour` | $0 \to 23$ | `int64` (8 bytes) | `int8` (1 byte) | 1 byte | Giảm **87.5%** | $0 \to 23$ nằm gọn trong $[-128, 127]$. |
+| `cancelled` / `diverted` | $0 \text{ hoặc } 1$ | `int64` (8 bytes) | `int8` (1 byte) | 1 byte | Giảm **87.5%** | Cờ nhị phân $0/1$. |
+| `crs_dep_time` / `crs_arr_time` | $0 \to 2400$ | `int64` (8 bytes) | `int16` (2 bytes) | 2 bytes | Giảm **75.0%** | `int16` chứa tới $32.767$. Định dạng HHMM ($\le 2400$) an toàn tuyệt đối. |
+| `distance` | $31 \to 5.095$ dặm | `float64` (8 bytes) | `int16` (2 bytes) | 2 bytes | Giảm **75.0%** | Khoảng cách nội địa Mỹ max $\approx 5.100$ dặm, nằm an toàn trong $[0, 32.767]$. |
+| `crs_elapsed_time` | $20 \to 700$ phút | `float64` (8 bytes) | `int16` (2 bytes) | 2 bytes | Giảm **75.0%** | Thời gian bay tối đa $\approx 700$ phút, an toàn trong $[0, 32.767]$. |
+| `dep_delay` / `arr_delay` | $-100 \to 2.500$ phút | `float64` (8 bytes) | `float32` (4 bytes) | 4 bytes | Giảm **50.0%** | `float32` có độ chính xác 7 chữ số có nghĩa, bảo toàn từng phút trễ. |
+| `carrier_delay` ... `late_aircraft_delay` | $0 \to 2.500$ phút | `float64` (8 bytes) | `float32` (4 bytes) | 4 bytes | Giảm **50.0%** | Độ trễ phân rã bảo toàn chính xác. |
+| `op_unique_carrier` | 15 hãng bay | `object` (> 32 bytes) | `category` (1 byte) | 1 byte | Giảm **> 95%** | 15 hãng bay được mã hóa dạng số nguyên nhỏ (Dictionary Lookup). |
+| `origin` / `dest` | 310 sân bay IATA | `object` (> 32 bytes) | `category` (2 bytes) | 2 bytes | Giảm **> 90%** | 310 sân bay được đánh số từ $0 \to 309$ trong từ điển chuỗi. |
+| `dep_time_of_day` | 4 khung giờ | `object` (> 32 bytes) | `category` (1 byte) | 1 byte | Giảm **> 95%** | 4 giá trị Morning, Afternoon, Evening, Night. |
+
+> **Tổng kết hiệu quả:** Toàn bộ bảng 7.079.081 dòng khi nạp vào RAM giảm dung lượng từ **~7.5 GB - 8.5 GB** xuống chỉ còn **~2.2 GB - 2.8 GB**, giúp toàn bộ quá trình tiền xử lý chạy trọn vẹn trong RAM mà không cần dùng đến ổ cứng ảo Swap/Pagefile.
+

@@ -198,24 +198,59 @@ def get_metadata():
     return JSONResponse(content=METADATA)
 
 @app.get("/api/metrics")
-def get_metrics_table():
-    """Trả về bảng đối sánh hiệu năng các mô hình (ưu tiên Grand Comparison 7 mô hình gồm cả Spark MLlib)."""
-    grand_path = os.path.join(METRICS_DIR, "grand_model_comparison.csv")
-    base_path = os.path.join(METRICS_DIR, "baseline_model_comparison.csv")
+def get_metrics_table(dataset: str = "10k"):
+    """Trả về bảng đối sánh hiệu năng các mô hình theo tập dữ liệu (10k hoặc 7m)."""
+    if dataset == "7m":
+        target_path = os.path.join(BASE_DIR, "results/full_7m/metrics/grand_model_comparison_7m.csv")
+    else:
+        grand_10k = os.path.join(BASE_DIR, "results/sample_10k/metrics/grand_model_comparison.csv")
+        target_path = grand_10k if os.path.exists(grand_10k) else os.path.join(METRICS_DIR, "grand_model_comparison.csv")
     
-    target_path = grand_path if os.path.exists(grand_path) else base_path
     if not os.path.exists(target_path):
         return JSONResponse(content=[])
     df = pd.read_csv(target_path)
     return JSONResponse(content=df.to_dict(orient="records"))
 
+@app.get("/api/pipeline-stages")
+def get_pipeline_stages():
+    """Trả về bảng số liệu chi tiết bóc tách thời gian 4 giai đoạn và toàn trình (7.07M dòng)."""
+    stages_path = os.path.join(BASE_DIR, "results/full_7m/metrics/pipeline_stages_time_breakdown.csv")
+    if not os.path.exists(stages_path):
+        return JSONResponse(content=[])
+    df = pd.read_csv(stages_path)
+    return JSONResponse(content=df.to_dict(orient="records"))
+
 @app.get("/api/figures/{filename}")
-def get_figure(filename: str):
-    """Cung cấp các biểu đồ khoa học dạng ảnh PNG."""
-    fig_path = os.path.join(FIGURES_DIR, filename)
-    if not os.path.exists(fig_path):
-        raise HTTPException(status_code=404, detail="Hình ảnh không tồn tại")
-    return FileResponse(fig_path, media_type="image/png")
+def get_figure(filename: str, dataset: str = "auto"):
+    """Cung cấp các biểu đồ khoa học dạng ảnh PNG hỗ trợ phân cấp folder."""
+    # Tìm kiếm theo thứ tự ưu tiên
+    search_paths = []
+    if dataset == "7m":
+        search_paths.extend([
+            os.path.join(BASE_DIR, "results/full_7m/figures/combined", filename),
+            os.path.join(BASE_DIR, "results/full_7m/figures/individual", filename),
+            os.path.join(BASE_DIR, "results/full_7m/figures", filename)
+        ])
+    elif dataset == "10k":
+        search_paths.extend([
+            os.path.join(BASE_DIR, "results/sample_10k/figures/combined", filename),
+            os.path.join(BASE_DIR, "results/sample_10k/figures/individual", filename),
+            os.path.join(BASE_DIR, "results/sample_10k/figures", filename)
+        ])
+    else: # auto
+        search_paths.extend([
+            os.path.join(BASE_DIR, "results/full_7m/figures/combined", filename),
+            os.path.join(BASE_DIR, "results/full_7m/figures/individual", filename),
+            os.path.join(BASE_DIR, "results/sample_10k/figures/combined", filename),
+            os.path.join(BASE_DIR, "results/sample_10k/figures/individual", filename),
+            os.path.join(FIGURES_DIR, filename)
+        ])
+
+    for p in search_paths:
+        if os.path.exists(p):
+            return FileResponse(p, media_type="image/png")
+
+    raise HTTPException(status_code=404, detail=f"Hình ảnh '{filename}' không tồn tại.")
 
 @app.post("/api/predict")
 def predict_flight_delay(req: FlightPredictionRequest):

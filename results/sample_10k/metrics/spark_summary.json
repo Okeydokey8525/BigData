@@ -1,0 +1,64 @@
+{
+  "metrics": {
+    "Model": "Random Forest (Spark MLlib)",
+    "Train Time (s)": 27.3219,
+    "Latency (ms/1k)": 254.15,
+    "RAM Usage (MB)": 1.02,
+    "Accuracy (%)": 78.11,
+    "Weighted Precision (%)": 61.08,
+    "Weighted Recall (%)": 78.11,
+    "Weighted F1 (%)": 68.55,
+    "Macro F1 (%)": 14.62
+  },
+  "detailed_report": {
+    "OnTime": {
+      "precision": 0.7814814814814814,
+      "recall": 0.9993234100135318,
+      "f1-score": 0.8770783847980997,
+      "support": 1478.0
+    },
+    "Carrier": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 109.0
+    },
+    "Weather": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 24.0
+    },
+    "NAS": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 103.0
+    },
+    "Security": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 1.0
+    },
+    "LateAircraft": {
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1-score": 0.0,
+      "support": 176.0
+    },
+    "accuracy": 0.7810682178741407,
+    "macro avg": {
+      "precision": 0.1302469135802469,
+      "recall": 0.16655390166892195,
+      "f1-score": 0.1461797307996833,
+      "support": 1891.0
+    },
+    "weighted avg": {
+      "precision": 0.6108036116497249,
+      "recall": 0.7810682178741407,
+      "f1-score": 0.6855218681816982,
+      "support": 1891.0
+    }
+  }
+}
