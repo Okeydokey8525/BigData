@@ -229,14 +229,14 @@ function updateExplainabilityCharts() {
     const fiImg = document.getElementById('img-feature-importance');
     const fiCard = document.getElementById('card-feature-importance');
 
-    // Update Confusion Matrix
-    cmImg.src = `/api/figures/confusion_matrix_${selectedModel}.png`;
+    // Update Confusion Matrix (7M)
+    cmImg.src = `/api/figures/cm_${selectedModel}_7m.png`;
 
     // Update Feature Importance (Logistic regression doesn't have feature_importances_)
     if (selectedModel === 'logistic_regression') {
         fiCard.style.display = 'none';
     } else {
         fiCard.style.display = 'block';
-        fiImg.src = `/api/figures/feature_importance_${selectedModel}.png`;
+        fiImg.src = `/api/figures/feat_imp_${selectedModel}_7m.png`;
     }
 }

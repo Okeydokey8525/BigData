@@ -1,0 +1,58 @@
+{
+    "Logistic Regression": {
+        "accuracy": 34.15,
+        "weighted_f1": 43.64,
+        "macro_f1": 15.14,
+        "train_time_sec": 1.28,
+        "latency_ms_per_1k": 31.6,
+        "peak_ram_mb": 1502.2
+    },
+    "Decision Tree": {
+        "accuracy": 26.4,
+        "weighted_f1": 34.23,
+        "macro_f1": 14.62,
+        "train_time_sec": 1.81,
+        "latency_ms_per_1k": 1.94,
+        "peak_ram_mb": 1381.8
+    },
+    "Random Forest (CPU)": {
+        "accuracy": 41.66,
+        "weighted_f1": 49.5,
+        "macro_f1": 18.73,
+        "train_time_sec": 2.52,
+        "latency_ms_per_1k": 35.22,
+        "peak_ram_mb": 1445.0
+    },
+    "LightGBM": {
+        "accuracy": 39.76,
+        "weighted_f1": 48.3,
+        "macro_f1": 19.51,
+        "train_time_sec": 2.33,
+        "latency_ms_per_1k": 7.22,
+        "peak_ram_mb": 1452.4
+    },
+    "XGBoost": {
+        "accuracy": 79.19,
+        "weighted_f1": 70.0,
+        "macro_f1": 14.75,
+        "train_time_sec": 3.33,
+        "latency_ms_per_1k": 12.55,
+        "peak_ram_mb": 1608.0
+    },
+    "CatBoost": {
+        "accuracy": 34.3,
+        "weighted_f1": 43.32,
+        "macro_f1": 16.31,
+        "train_time_sec": 5.67,
+        "latency_ms_per_1k": 7.7,
+        "peak_ram_mb": 1733.8
+    },
+    "Random Forest (Spark MLlib)": {
+        "accuracy": 78.88,
+        "weighted_f1": 69.57,
+        "macro_f1": 27.8,
+        "train_time_sec": 49.89,
+        "latency_ms_per_1k": 140.76,
+        "peak_ram_mb": 1012.2
+    }
+}

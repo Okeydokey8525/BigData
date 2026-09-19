@@ -1,8 +1,0 @@
-Model,Train Time (s),Latency (ms/1k),RAM Usage (MB),Accuracy (%),Weighted Precision (%),Weighted Recall (%),Weighted F1 (%),Macro F1 (%)
-Logistic Regression,0.0739,0.47,1.2,15.8,67.46,15.8,20.58,10.4
-Decision Tree,0.044,0.75,0.8,31.1,67.01,31.1,39.35,14.51
-Random Forest (CPU),0.2218,22.13,17.19,56.86,66.95,56.86,60.9,18.28
-LightGBM,0.3567,6.59,14.0,55.13,68.8,55.13,60.18,20.32
-CatBoost,0.9779,1.58,13.24,36.84,70.93,36.84,45.1,17.81
-XGBoost,0.6934,4.28,125.09,48.07,70.49,48.07,55.28,20.57
-Random Forest (Spark MLlib),27.3219,254.15,1.02,78.11,61.08,78.11,68.55,14.62

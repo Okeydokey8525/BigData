@@ -1,2 +1,0 @@
-Model,Train Time (s),Latency (ms/1k),RAM Usage (MB),Accuracy (%),Weighted Precision (%),Weighted Recall (%),Weighted F1 (%),Macro F1 (%)
-Random Forest (Spark MLlib),27.3219,254.15,1.02,78.11,61.08,78.11,68.55,14.62

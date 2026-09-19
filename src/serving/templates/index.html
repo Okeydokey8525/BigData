@@ -196,9 +196,9 @@
         <section id="tab-content-benchmark" class="tab-pane hidden">
             <div class="glass-card full-width">
                 <div class="card-header">
-                    <div class="card-badge">BENCHMARK COMPARISON (7 MODELS)</div>
-                    <h2 class="card-title">Bảng Đối Sánh Toàn Diện: 6 Mô Hình Hướng Thuần vs Apache Spark MLlib</h2>
-                    <p class="card-description">Đo đạc trên cùng tập dữ liệu mẫu 10.000 dòng có xử lý mất cân bằng lớp (class_weight='balanced') trên phần cứng AMD Ryzen 7 250 & RTX 5050.</p>
+                    <div class="card-badge">BENCHMARK COMPARISON (7 MODELS - 7M DATASET)</div>
+                    <h2 class="card-title">Bảng Đối Sánh Toàn Diện: 6 Mô Hình Hướng Thuần vs Apache Spark MLlib (7 Triệu Dòng)</h2>
+                    <p class="card-description">Đo đạc thực nghiệm toàn diện trên bộ dữ liệu Big Data 7 triệu dòng (6.965.267 quan sát thực tế năm 2024), xử lý mất cân bằng lớp có phân tầng (Stratified Sampling).</p>
                 </div>
 
                 <!-- KPI Metric Counters -->
@@ -209,19 +209,19 @@
                         <div class="kpi-sub">3 Cổ điển + 3 SOTA + Spark Phân tán</div>
                     </div>
                     <div class="kpi-card">
+                        <div class="kpi-label">Accuracy Cao Nhất</div>
+                        <div class="kpi-value accent-green">79.20%</div>
+                        <div class="kpi-sub">XGBoost & Spark RF (78.88%)</div>
+                    </div>
+                    <div class="kpi-card">
                         <div class="kpi-label">Weighted F1 Cao Nhất</div>
-                        <div class="kpi-value accent-green">60.90%</div>
-                        <div class="kpi-sub">Random Forest CPU</div>
+                        <div class="kpi-value accent-cyan">70.04%</div>
+                        <div class="kpi-sub">XGBoost & Spark RF (69.57%)</div>
                     </div>
                     <div class="kpi-card">
-                        <div class="kpi-label">Macro F1 Cao Nhất (Lớp Hiếm)</div>
-                        <div class="kpi-value accent-cyan">20.57%</div>
-                        <div class="kpi-sub">XGBoost GPU/CPU</div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-label">Mô hình Huấn luyện Nhanh Nhất</div>
-                        <div class="kpi-value accent-amber">0.044s</div>
-                        <div class="kpi-sub">Decision Tree (Cây đơn)</div>
+                        <div class="kpi-label">Huấn luyện Nhanh Nhất</div>
+                        <div class="kpi-value accent-amber">1.28s</div>
+                        <div class="kpi-sub">Logistic Regression & Decision Tree (1.81s)</div>
                     </div>
                 </div>
 
@@ -245,15 +245,69 @@
                     </table>
                 </div>
 
-                <!-- Embedded Figures -->
-                <div class="figure-box">
-                    <h3 class="figure-title">Đối Sánh Trực Diện Tối Hậu: Random Forest Đơn Máy (Scikit-Learn CPU) vs Phân Tán (Apache Spark MLlib)</h3>
-                    <img src="/api/figures/grand_rf_comparison.png" alt="Grand RF Comparison" class="figure-img" onerror="this.style.display='none'">
+                <!-- Section 1: Radar & Bubble Trade-off Plots -->
+                <div class="grid-2col-figures" style="margin-top: 2rem;">
+                    <div class="figure-box">
+                        <h3 class="figure-title">Đánh Giá Đa Chiều 5 Chỉ Số Chất Lượng (Radar / Spider Chart)</h3>
+                        <p class="chart-sub" style="margin-bottom: 0.8rem; color: #64748b;">So sánh đồng thời Accuracy, Precision, Recall, Weighted F1 và Macro F1.</p>
+                        <img src="/api/figures/multi_metric_radar_7m.png" alt="Multi-Metric Radar Chart" class="figure-img">
+                    </div>
+                    <div class="figure-box">
+                        <h3 class="figure-title">Cân Bằng Hiệu Năng & Tốc Độ (Bubble Trade-off Plot)</h3>
+                        <p class="chart-sub" style="margin-bottom: 0.8rem; color: #64748b;">Đánh đổi F1-Score vs Thời gian huấn luyện (log scale) vs Kích thước RAM đỉnh.</p>
+                        <img src="/api/figures/accuracy_vs_speed_bubble_7m.png" alt="Bubble Trade-off Plot" class="figure-img">
+                    </div>
+                </div>
+
+                <!-- Section 2: Grouped Bar & Horizontal Bar Ranking -->
+                <div class="grid-2col-figures" style="margin-top: 1.5rem;">
+                    <div class="figure-box">
+                        <h3 class="figure-title">So Sánh Đối Đầu Cột Kép: Accuracy (%) & Weighted F1 (%)</h3>
+                        <p class="chart-sub" style="margin-bottom: 0.8rem; color: #64748b;">Đối sánh trực diện 2 chỉ số cốt lõi của toàn bộ 7 thuật toán học máy.</p>
+                        <img src="/api/figures/models_grouped_bar_7m.png" alt="Models Grouped Bar" class="figure-img">
+                    </div>
+                    <div class="figure-box">
+                        <h3 class="figure-title">Xếp Hạng Tốc Độ Huấn Luyện (Training Time - Thanh Ngang)</h3>
+                        <p class="chart-sub" style="margin-bottom: 0.8rem; color: #64748b;">Thời gian hoàn tất huấn luyện mô hình (giây) từ nhanh nhất đến lâu nhất.</p>
+                        <img src="/api/figures/models_training_time_horizontal_bar_7m.png" alt="Training Time Horizontal Bar" class="figure-img">
+                    </div>
+                </div>
+
+                <!-- Section 3: Core Study Focus (RF Showdown & Pipeline Stages) -->
+                <div class="figure-box" style="margin-top: 1.5rem;">
+                    <h3 class="figure-title">Trọng Tâm Đề Tài: Đối Kháng Trực Diện Random Forest Đơn Máy (CPU) vs Phân Tán (Apache Spark MLlib)</h3>
+                    <p class="chart-sub" style="margin-bottom: 0.8rem; color: #64748b;">Bóc tách chi tiết về chất lượng phân loại, thời gian huấn luyện và độ trễ suy luận.</p>
+                    <img src="/api/figures/grand_rf_showdown_7m.png" alt="Grand RF Showdown 7M" class="figure-img">
+                </div>
+
+                <div class="grid-2col-figures" style="margin-top: 1.5rem;">
+                    <div class="figure-box">
+                        <h3 class="figure-title">Biểu Đồ Cột Phân Đoạn (Stacked Bar) Bóc Tách 4 Giai Đoạn Pipeline</h3>
+                        <p class="chart-sub" style="margin-bottom: 0.8rem; color: #64748b;">Thời gian: Tiền xử lý ETL $\to$ Feature Engineering $\to$ Huấn luyện $\to$ Suy luận.</p>
+                        <img src="/api/figures/pipeline_stages_breakdown_7m.png" alt="Pipeline Stages Breakdown" class="figure-img">
+                    </div>
+                    <div class="figure-box">
+                        <h3 class="figure-title">Biểu Đồ Tròn (Donut) Phân Bố 6 Nhãn Trễ (7 Triệu Chuyến Bay - 2024)</h3>
+                        <p class="chart-sub" style="margin-bottom: 0.8rem; color: #64748b;">Tỷ lệ On-Time và 5 nhóm nguyên nhân chậm trễ theo tiêu chuẩn BTS Hoa Kỳ.</p>
+                        <img src="/api/figures/delay_distribution_7m_pie.png" alt="Delay Distribution Pie" class="figure-img">
+                    </div>
+                </div>
+
+                <!-- Section 4: Latency & RAM Usage & Dashboard -->
+                <div class="grid-2col-figures" style="margin-top: 1.5rem;">
+                    <div class="figure-box">
+                        <h3 class="figure-title">So Sánh Độ Trễ Suy Luận (Inference Latency - ms / 1,000 mẫu)</h3>
+                        <img src="/api/figures/models_latency_bar_7m.png" alt="Latency Bar" class="figure-img">
+                    </div>
+                    <div class="figure-box">
+                        <h3 class="figure-title">So Sánh Mức Tiêu Thụ RAM Đỉnh (Peak RAM Usage - MB)</h3>
+                        <img src="/api/figures/models_peak_ram_bar_7m.png" alt="Peak RAM Bar" class="figure-img">
+                    </div>
                 </div>
 
                 <div class="figure-box" style="margin-top: 1.5rem;">
-                    <h3 class="figure-title">Biểu Đồ Trực Quan Hóa Đối Sánh 4 Chiều 6 Mô Hình Baseline (Benchmark Dashboard)</h3>
-                    <img src="/api/figures/baseline_comparison_dashboard.png" alt="Baseline Comparison Dashboard" class="figure-img" onerror="this.style.display='none'">
+                    <h3 class="figure-title">Bảng Tổng Thể Đối Sánh 4 Chiều Toàn Bộ 7 Mô Hình (Grand Comparison Dashboard)</h3>
+                    <img src="/api/figures/grand_comparison_7m_dashboard.png" alt="Grand Comparison Dashboard" class="figure-img">
                 </div>
             </div>
         </section>
@@ -262,40 +316,41 @@
         <section id="tab-content-explain" class="tab-pane hidden">
             <div class="glass-card full-width">
                 <div class="card-header">
-                    <div class="card-badge">MODEL EXPLAINABILITY</div>
-                    <h2 class="card-title">Giải Thích Mô Hình & Ma Trận Nhầm Lẫn (Confusion Matrix)</h2>
-                    <p class="card-description">Kiểm tra khả năng phân loại từng nguyên nhân trễ và mức độ quan trọng của các biến đầu vào.</p>
+                    <div class="card-badge">MODEL EXPLAINABILITY (7 MODELS)</div>
+                    <h2 class="card-title">Giải Thích Mô Hình & Ma Trận Nhầm Lẫn (Confusion Matrix Heatmaps)</h2>
+                    <p class="card-description">Kiểm tra khả năng phân loại từng nguyên nhân trễ và mức độ quan trọng của các biến đầu vào cho từng mô hình riêng biệt.</p>
                 </div>
 
                 <!-- Model Selector for Explainability -->
                 <div class="model-filter-bar">
-                    <label for="select-explain-model" class="filter-label">Chọn Mô hình để Xem Biểu Đồ:</label>
+                    <label for="select-explain-model" class="filter-label">Chọn Mô hình để Xem Biểu Đồ Riêng:</label>
                     <select id="select-explain-model" class="form-select inline-select" onchange="updateExplainabilityCharts()">
-                        <option value="random_forest_cpu">Random Forest (CPU) [Trọng tâm]</option>
+                        <option value="random_forest_cpu">Random Forest (Scikit-Learn CPU) [Trọng tâm đối sánh]</option>
+                        <option value="spark_rf">Random Forest (Apache Spark MLlib - Phân tán 7M)</option>
+                        <option value="xgboost">XGBoost (DMLC - Độ chính xác cao nhất)</option>
                         <option value="lightgbm">LightGBM (Microsoft)</option>
-                        <option value="xgboost">XGBoost (DMLC)</option>
                         <option value="catboost">CatBoost (Yandex)</option>
-                        <option value="decision_tree">Decision Tree (Cây quyết định)</option>
-                        <option value="logistic_regression">Logistic Regression</option>
+                        <option value="decision_tree">Decision Tree (Cây quyết định đơn)</option>
+                        <option value="logistic_regression">Logistic Regression (Hồi quy Logistic)</option>
                     </select>
                 </div>
 
                 <div class="grid-2col-figures">
                     <!-- Confusion Matrix Image -->
                     <div class="chart-card">
-                        <h3 class="chart-heading" id="cm-heading">Ma Trận Nhầm Lẫn (Confusion Matrix)</h3>
-                        <p class="chart-sub">Đánh giá khả năng dự đoán đúng và mức độ nhầm lẫn giữa các nguyên nhân trễ.</p>
+                        <h3 class="chart-heading" id="cm-heading">Ma Trận Nhầm Lẫn (Confusion Matrix Heatmap)</h3>
+                        <p class="chart-sub">Tỷ lệ nhận diện chuẩn xác (%) trên đường chéo chính và tỷ lệ nhầm lẫn giữa các nguyên nhân.</p>
                         <div class="chart-wrapper">
-                            <img id="img-confusion-matrix" src="/api/figures/confusion_matrix_random_forest_cpu.png" alt="Confusion Matrix" class="responsive-chart">
+                            <img id="img-confusion-matrix" src="/api/figures/cm_random_forest_cpu_7m.png" alt="Confusion Matrix" class="responsive-chart">
                         </div>
                     </div>
 
                     <!-- Feature Importance Image -->
                     <div class="chart-card" id="card-feature-importance">
                         <h3 class="chart-heading" id="fi-heading">Tầm Quan Trọng Của Đặc Trưng (Feature Importance)</h3>
-                        <p class="chart-sub">Mức độ đóng góp của từng biến số (Giờ bay, Sân bay, Hãng hàng không) vào cây quyết định.</p>
+                        <p class="chart-sub">Mức độ đóng góp của từng biến số (Giờ bay, Sân bay, Hãng hàng không, Khoảng cách) vào thuật toán.</p>
                         <div class="chart-wrapper">
-                            <img id="img-feature-importance" src="/api/figures/feature_importance_random_forest_cpu.png" alt="Feature Importance" class="responsive-chart">
+                            <img id="img-feature-importance" src="/api/figures/feat_imp_random_forest_cpu_7m.png" alt="Feature Importance" class="responsive-chart">
                         </div>
                     </div>
                 </div>

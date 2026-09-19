@@ -1,1382 +1,252 @@
 {
-  "carriers": [
-    {
-      "code": "9E",
-      "name": "9E - Endeavor Air"
-    },
-    {
-      "code": "AA",
-      "name": "AA - American Airlines"
-    },
-    {
-      "code": "AS",
-      "name": "AS - Alaska Airlines"
-    },
-    {
-      "code": "B6",
-      "name": "B6 - JetBlue Airways"
-    },
-    {
-      "code": "DL",
-      "name": "DL - Delta Air Lines"
-    },
-    {
-      "code": "F9",
-      "name": "F9 - Frontier Airlines"
-    },
-    {
-      "code": "G4",
-      "name": "G4 - Allegiant Air"
-    },
-    {
-      "code": "HA",
-      "name": "HA - Hawaiian Airlines"
-    },
-    {
-      "code": "MQ",
-      "name": "MQ - Envoy Air"
-    },
-    {
-      "code": "NK",
-      "name": "NK - Spirit Airlines"
-    },
-    {
-      "code": "OH",
-      "name": "OH - PSA Airlines"
-    },
-    {
-      "code": "OO",
-      "name": "OO - SkyWest Airlines"
-    },
-    {
-      "code": "UA",
-      "name": "UA - United Airlines"
-    },
-    {
-      "code": "WN",
-      "name": "WN - Southwest Airlines"
-    },
-    {
-      "code": "YX",
-      "name": "YX - Republic Airways"
-    }
-  ],
-  "airports": [
-    {
-      "code": "ABE",
-      "name": "ABE - Sân bay ABE"
-    },
-    {
-      "code": "ABI",
-      "name": "ABI - Sân bay ABI"
-    },
-    {
-      "code": "ABQ",
-      "name": "ABQ - Sân bay ABQ"
-    },
-    {
-      "code": "ABR",
-      "name": "ABR - Sân bay ABR"
-    },
-    {
-      "code": "ACK",
-      "name": "ACK - Sân bay ACK"
-    },
-    {
-      "code": "ACT",
-      "name": "ACT - Sân bay ACT"
-    },
-    {
-      "code": "ACV",
-      "name": "ACV - Sân bay ACV"
-    },
-    {
-      "code": "ACY",
-      "name": "ACY - Sân bay ACY"
-    },
-    {
-      "code": "ADQ",
-      "name": "ADQ - Sân bay ADQ"
-    },
-    {
-      "code": "AEX",
-      "name": "AEX - Sân bay AEX"
-    },
-    {
-      "code": "AGS",
-      "name": "AGS - Sân bay AGS"
-    },
-    {
-      "code": "ALB",
-      "name": "ALB - Sân bay ALB"
-    },
-    {
-      "code": "ALW",
-      "name": "ALW - Sân bay ALW"
-    },
-    {
-      "code": "AMA",
-      "name": "AMA - Sân bay AMA"
-    },
-    {
-      "code": "ANC",
-      "name": "ANC - Sân bay ANC"
-    },
-    {
-      "code": "ASE",
-      "name": "ASE - Sân bay ASE"
-    },
-    {
-      "code": "ATL",
-      "name": "Hartsfield-Jackson Atlanta (ATL)"
-    },
-    {
-      "code": "ATW",
-      "name": "ATW - Sân bay ATW"
-    },
-    {
-      "code": "AUS",
-      "name": "AUS - Sân bay AUS"
-    },
-    {
-      "code": "AVL",
-      "name": "AVL - Sân bay AVL"
-    },
-    {
-      "code": "AVP",
-      "name": "AVP - Sân bay AVP"
-    },
-    {
-      "code": "AZA",
-      "name": "AZA - Sân bay AZA"
-    },
-    {
-      "code": "AZO",
-      "name": "AZO - Sân bay AZO"
-    },
-    {
-      "code": "BDL",
-      "name": "BDL - Sân bay BDL"
-    },
-    {
-      "code": "BET",
-      "name": "BET - Sân bay BET"
-    },
-    {
-      "code": "BFF",
-      "name": "BFF - Sân bay BFF"
-    },
-    {
-      "code": "BFL",
-      "name": "BFL - Sân bay BFL"
-    },
-    {
-      "code": "BGM",
-      "name": "BGM - Sân bay BGM"
-    },
-    {
-      "code": "BGR",
-      "name": "BGR - Sân bay BGR"
-    },
-    {
-      "code": "BHM",
-      "name": "BHM - Sân bay BHM"
-    },
-    {
-      "code": "BIL",
-      "name": "BIL - Sân bay BIL"
-    },
-    {
-      "code": "BIS",
-      "name": "BIS - Sân bay BIS"
-    },
-    {
-      "code": "BJI",
-      "name": "BJI - Sân bay BJI"
-    },
-    {
-      "code": "BLI",
-      "name": "BLI - Sân bay BLI"
-    },
-    {
-      "code": "BLV",
-      "name": "BLV - Sân bay BLV"
-    },
-    {
-      "code": "BMI",
-      "name": "BMI - Sân bay BMI"
-    },
-    {
-      "code": "BNA",
-      "name": "BNA - Sân bay BNA"
-    },
-    {
-      "code": "BOI",
-      "name": "BOI - Sân bay BOI"
-    },
-    {
-      "code": "BOS",
-      "name": "Boston Logan (BOS)"
-    },
-    {
-      "code": "BPT",
-      "name": "BPT - Sân bay BPT"
-    },
-    {
-      "code": "BQK",
-      "name": "BQK - Sân bay BQK"
-    },
-    {
-      "code": "BQN",
-      "name": "BQN - Sân bay BQN"
-    },
-    {
-      "code": "BRD",
-      "name": "BRD - Sân bay BRD"
-    },
-    {
-      "code": "BRO",
-      "name": "BRO - Sân bay BRO"
-    },
-    {
-      "code": "BRW",
-      "name": "BRW - Sân bay BRW"
-    },
-    {
-      "code": "BTR",
-      "name": "BTR - Sân bay BTR"
-    },
-    {
-      "code": "BTV",
-      "name": "BTV - Sân bay BTV"
-    },
-    {
-      "code": "BUF",
-      "name": "BUF - Sân bay BUF"
-    },
-    {
-      "code": "BUR",
-      "name": "BUR - Sân bay BUR"
-    },
-    {
-      "code": "BWI",
-      "name": "BWI - Sân bay BWI"
-    },
-    {
-      "code": "BZN",
-      "name": "BZN - Sân bay BZN"
-    },
-    {
-      "code": "CAE",
-      "name": "CAE - Sân bay CAE"
-    },
-    {
-      "code": "CAK",
-      "name": "CAK - Sân bay CAK"
-    },
-    {
-      "code": "CDV",
-      "name": "CDV - Sân bay CDV"
-    },
-    {
-      "code": "CHA",
-      "name": "CHA - Sân bay CHA"
-    },
-    {
-      "code": "CHO",
-      "name": "CHO - Sân bay CHO"
-    },
-    {
-      "code": "CHS",
-      "name": "CHS - Sân bay CHS"
-    },
-    {
-      "code": "CID",
-      "name": "CID - Sân bay CID"
-    },
-    {
-      "code": "CIU",
-      "name": "CIU - Sân bay CIU"
-    },
-    {
-      "code": "CKB",
-      "name": "CKB - Sân bay CKB"
-    },
-    {
-      "code": "CLE",
-      "name": "CLE - Sân bay CLE"
-    },
-    {
-      "code": "CLL",
-      "name": "CLL - Sân bay CLL"
-    },
-    {
-      "code": "CLT",
-      "name": "Charlotte Douglas (CLT)"
-    },
-    {
-      "code": "CMH",
-      "name": "CMH - Sân bay CMH"
-    },
-    {
-      "code": "CMI",
-      "name": "CMI - Sân bay CMI"
-    },
-    {
-      "code": "COS",
-      "name": "COS - Sân bay COS"
-    },
-    {
-      "code": "COU",
-      "name": "COU - Sân bay COU"
-    },
-    {
-      "code": "CPR",
-      "name": "CPR - Sân bay CPR"
-    },
-    {
-      "code": "CRP",
-      "name": "CRP - Sân bay CRP"
-    },
-    {
-      "code": "CRW",
-      "name": "CRW - Sân bay CRW"
-    },
-    {
-      "code": "CSG",
-      "name": "CSG - Sân bay CSG"
-    },
-    {
-      "code": "CVG",
-      "name": "CVG - Sân bay CVG"
-    },
-    {
-      "code": "CWA",
-      "name": "CWA - Sân bay CWA"
-    },
-    {
-      "code": "CYS",
-      "name": "CYS - Sân bay CYS"
-    },
-    {
-      "code": "DAB",
-      "name": "DAB - Sân bay DAB"
-    },
-    {
-      "code": "DAL",
-      "name": "DAL - Sân bay DAL"
-    },
-    {
-      "code": "DAY",
-      "name": "DAY - Sân bay DAY"
-    },
-    {
-      "code": "DCA",
-      "name": "DCA - Sân bay DCA"
-    },
-    {
-      "code": "DDC",
-      "name": "DDC - Sân bay DDC"
-    },
-    {
-      "code": "DEC",
-      "name": "DEC - Sân bay DEC"
-    },
-    {
-      "code": "DEN",
-      "name": "Denver International (DEN)"
-    },
-    {
-      "code": "DFW",
-      "name": "Dallas/Fort Worth (DFW)"
-    },
-    {
-      "code": "DHN",
-      "name": "DHN - Sân bay DHN"
-    },
-    {
-      "code": "DIK",
-      "name": "DIK - Sân bay DIK"
-    },
-    {
-      "code": "DLG",
-      "name": "DLG - Sân bay DLG"
-    },
-    {
-      "code": "DLH",
-      "name": "DLH - Sân bay DLH"
-    },
-    {
-      "code": "DRO",
-      "name": "DRO - Sân bay DRO"
-    },
-    {
-      "code": "DSM",
-      "name": "DSM - Sân bay DSM"
-    },
-    {
-      "code": "DTW",
-      "name": "Detroit Metropolitan (DTW)"
-    },
-    {
-      "code": "EAR",
-      "name": "EAR - Sân bay EAR"
-    },
-    {
-      "code": "ECP",
-      "name": "ECP - Sân bay ECP"
-    },
-    {
-      "code": "EGE",
-      "name": "EGE - Sân bay EGE"
-    },
-    {
-      "code": "ELM",
-      "name": "ELM - Sân bay ELM"
-    },
-    {
-      "code": "ELP",
-      "name": "ELP - Sân bay ELP"
-    },
-    {
-      "code": "EUG",
-      "name": "EUG - Sân bay EUG"
-    },
-    {
-      "code": "EVV",
-      "name": "EVV - Sân bay EVV"
-    },
-    {
-      "code": "EWR",
-      "name": "Newark Liberty (EWR)"
-    },
-    {
-      "code": "EYW",
-      "name": "EYW - Sân bay EYW"
-    },
-    {
-      "code": "FAI",
-      "name": "FAI - Sân bay FAI"
-    },
-    {
-      "code": "FAR",
-      "name": "FAR - Sân bay FAR"
-    },
-    {
-      "code": "FAT",
-      "name": "FAT - Sân bay FAT"
-    },
-    {
-      "code": "FAY",
-      "name": "FAY - Sân bay FAY"
-    },
-    {
-      "code": "FCA",
-      "name": "FCA - Sân bay FCA"
-    },
-    {
-      "code": "FLG",
-      "name": "FLG - Sân bay FLG"
-    },
-    {
-      "code": "FLL",
-      "name": "Fort Lauderdale-Hollywood (FLL)"
-    },
-    {
-      "code": "FNT",
-      "name": "FNT - Sân bay FNT"
-    },
-    {
-      "code": "FSD",
-      "name": "FSD - Sân bay FSD"
-    },
-    {
-      "code": "FSM",
-      "name": "FSM - Sân bay FSM"
-    },
-    {
-      "code": "FWA",
-      "name": "FWA - Sân bay FWA"
-    },
-    {
-      "code": "GCC",
-      "name": "GCC - Sân bay GCC"
-    },
-    {
-      "code": "GEG",
-      "name": "GEG - Sân bay GEG"
-    },
-    {
-      "code": "GFK",
-      "name": "GFK - Sân bay GFK"
-    },
-    {
-      "code": "GGG",
-      "name": "GGG - Sân bay GGG"
-    },
-    {
-      "code": "GJT",
-      "name": "GJT - Sân bay GJT"
-    },
-    {
-      "code": "GNV",
-      "name": "GNV - Sân bay GNV"
-    },
-    {
-      "code": "GPT",
-      "name": "GPT - Sân bay GPT"
-    },
-    {
-      "code": "GRB",
-      "name": "GRB - Sân bay GRB"
-    },
-    {
-      "code": "GRI",
-      "name": "GRI - Sân bay GRI"
-    },
-    {
-      "code": "GRK",
-      "name": "GRK - Sân bay GRK"
-    },
-    {
-      "code": "GRR",
-      "name": "GRR - Sân bay GRR"
-    },
-    {
-      "code": "GSO",
-      "name": "GSO - Sân bay GSO"
-    },
-    {
-      "code": "GSP",
-      "name": "GSP - Sân bay GSP"
-    },
-    {
-      "code": "GST",
-      "name": "GST - Sân bay GST"
-    },
-    {
-      "code": "GTF",
-      "name": "GTF - Sân bay GTF"
-    },
-    {
-      "code": "GTR",
-      "name": "GTR - Sân bay GTR"
-    },
-    {
-      "code": "GUC",
-      "name": "GUC - Sân bay GUC"
-    },
-    {
-      "code": "GUM",
-      "name": "GUM - Sân bay GUM"
-    },
-    {
-      "code": "HDN",
-      "name": "HDN - Sân bay HDN"
-    },
-    {
-      "code": "HGR",
-      "name": "HGR - Sân bay HGR"
-    },
-    {
-      "code": "HHH",
-      "name": "HHH - Sân bay HHH"
-    },
-    {
-      "code": "HIB",
-      "name": "HIB - Sân bay HIB"
-    },
-    {
-      "code": "HLN",
-      "name": "HLN - Sân bay HLN"
-    },
-    {
-      "code": "HNL",
-      "name": "HNL - Sân bay HNL"
-    },
-    {
-      "code": "HOU",
-      "name": "HOU - Sân bay HOU"
-    },
-    {
-      "code": "HPN",
-      "name": "HPN - Sân bay HPN"
-    },
-    {
-      "code": "HRL",
-      "name": "HRL - Sân bay HRL"
-    },
-    {
-      "code": "HSV",
-      "name": "HSV - Sân bay HSV"
-    },
-    {
-      "code": "HTS",
-      "name": "HTS - Sân bay HTS"
-    },
-    {
-      "code": "HYS",
-      "name": "HYS - Sân bay HYS"
-    },
-    {
-      "code": "IAD",
-      "name": "IAD - Sân bay IAD"
-    },
-    {
-      "code": "IAH",
-      "name": "George Bush Houston (IAH)"
-    },
-    {
-      "code": "ICT",
-      "name": "ICT - Sân bay ICT"
-    },
-    {
-      "code": "IDA",
-      "name": "IDA - Sân bay IDA"
-    },
-    {
-      "code": "ILM",
-      "name": "ILM - Sân bay ILM"
-    },
-    {
-      "code": "IMT",
-      "name": "IMT - Sân bay IMT"
-    },
-    {
-      "code": "IND",
-      "name": "IND - Sân bay IND"
-    },
-    {
-      "code": "ISP",
-      "name": "ISP - Sân bay ISP"
-    },
-    {
-      "code": "ITH",
-      "name": "ITH - Sân bay ITH"
-    },
-    {
-      "code": "ITO",
-      "name": "ITO - Sân bay ITO"
-    },
-    {
-      "code": "JAC",
-      "name": "JAC - Sân bay JAC"
-    },
-    {
-      "code": "JAN",
-      "name": "JAN - Sân bay JAN"
-    },
-    {
-      "code": "JAX",
-      "name": "JAX - Sân bay JAX"
-    },
-    {
-      "code": "JFK",
-      "name": "John F. Kennedy New York (JFK)"
-    },
-    {
-      "code": "JMS",
-      "name": "JMS - Sân bay JMS"
-    },
-    {
-      "code": "JNU",
-      "name": "JNU - Sân bay JNU"
-    },
-    {
-      "code": "JST",
-      "name": "JST - Sân bay JST"
-    },
-    {
-      "code": "KOA",
-      "name": "KOA - Sân bay KOA"
-    },
-    {
-      "code": "KTN",
-      "name": "KTN - Sân bay KTN"
-    },
-    {
-      "code": "LAN",
-      "name": "LAN - Sân bay LAN"
-    },
-    {
-      "code": "LAR",
-      "name": "LAR - Sân bay LAR"
-    },
-    {
-      "code": "LAS",
-      "name": "Harry Reid Las Vegas (LAS)"
-    },
-    {
-      "code": "LAW",
-      "name": "LAW - Sân bay LAW"
-    },
-    {
-      "code": "LAX",
-      "name": "Los Angeles International (LAX)"
-    },
-    {
-      "code": "LBB",
-      "name": "LBB - Sân bay LBB"
-    },
-    {
-      "code": "LBE",
-      "name": "LBE - Sân bay LBE"
-    },
-    {
-      "code": "LBF",
-      "name": "LBF - Sân bay LBF"
-    },
-    {
-      "code": "LBL",
-      "name": "LBL - Sân bay LBL"
-    },
-    {
-      "code": "LCH",
-      "name": "LCH - Sân bay LCH"
-    },
-    {
-      "code": "LCK",
-      "name": "LCK - Sân bay LCK"
-    },
-    {
-      "code": "LEX",
-      "name": "LEX - Sân bay LEX"
-    },
-    {
-      "code": "LFT",
-      "name": "LFT - Sân bay LFT"
-    },
-    {
-      "code": "LGA",
-      "name": "LaGuardia New York (LGA)"
-    },
-    {
-      "code": "LGB",
-      "name": "LGB - Sân bay LGB"
-    },
-    {
-      "code": "LIH",
-      "name": "LIH - Sân bay LIH"
-    },
-    {
-      "code": "LIT",
-      "name": "LIT - Sân bay LIT"
-    },
-    {
-      "code": "LNK",
-      "name": "LNK - Sân bay LNK"
-    },
-    {
-      "code": "LRD",
-      "name": "LRD - Sân bay LRD"
-    },
-    {
-      "code": "LWS",
-      "name": "LWS - Sân bay LWS"
-    },
-    {
-      "code": "MAF",
-      "name": "MAF - Sân bay MAF"
-    },
-    {
-      "code": "MBS",
-      "name": "MBS - Sân bay MBS"
-    },
-    {
-      "code": "MCI",
-      "name": "MCI - Sân bay MCI"
-    },
-    {
-      "code": "MCO",
-      "name": "Orlando International (MCO)"
-    },
-    {
-      "code": "MDT",
-      "name": "MDT - Sân bay MDT"
-    },
-    {
-      "code": "MDW",
-      "name": "MDW - Sân bay MDW"
-    },
-    {
-      "code": "MEI",
-      "name": "MEI - Sân bay MEI"
-    },
-    {
-      "code": "MEM",
-      "name": "MEM - Sân bay MEM"
-    },
-    {
-      "code": "MFE",
-      "name": "MFE - Sân bay MFE"
-    },
-    {
-      "code": "MFR",
-      "name": "MFR - Sân bay MFR"
-    },
-    {
-      "code": "MGM",
-      "name": "MGM - Sân bay MGM"
-    },
-    {
-      "code": "MHK",
-      "name": "MHK - Sân bay MHK"
-    },
-    {
-      "code": "MHT",
-      "name": "MHT - Sân bay MHT"
-    },
-    {
-      "code": "MIA",
-      "name": "Miami International (MIA)"
-    },
-    {
-      "code": "MKE",
-      "name": "MKE - Sân bay MKE"
-    },
-    {
-      "code": "MLB",
-      "name": "MLB - Sân bay MLB"
-    },
-    {
-      "code": "MLI",
-      "name": "MLI - Sân bay MLI"
-    },
-    {
-      "code": "MLU",
-      "name": "MLU - Sân bay MLU"
-    },
-    {
-      "code": "MOB",
-      "name": "MOB - Sân bay MOB"
-    },
-    {
-      "code": "MOT",
-      "name": "MOT - Sân bay MOT"
-    },
-    {
-      "code": "MQT",
-      "name": "MQT - Sân bay MQT"
-    },
-    {
-      "code": "MRY",
-      "name": "MRY - Sân bay MRY"
-    },
-    {
-      "code": "MSN",
-      "name": "MSN - Sân bay MSN"
-    },
-    {
-      "code": "MSO",
-      "name": "MSO - Sân bay MSO"
-    },
-    {
-      "code": "MSP",
-      "name": "Minneapolis-Saint Paul (MSP)"
-    },
-    {
-      "code": "MSY",
-      "name": "MSY - Sân bay MSY"
-    },
-    {
-      "code": "MTJ",
-      "name": "MTJ - Sân bay MTJ"
-    },
-    {
-      "code": "MVY",
-      "name": "MVY - Sân bay MVY"
-    },
-    {
-      "code": "MYR",
-      "name": "MYR - Sân bay MYR"
-    },
-    {
-      "code": "OAJ",
-      "name": "OAJ - Sân bay OAJ"
-    },
-    {
-      "code": "OAK",
-      "name": "OAK - Sân bay OAK"
-    },
-    {
-      "code": "OGG",
-      "name": "OGG - Sân bay OGG"
-    },
-    {
-      "code": "OKC",
-      "name": "OKC - Sân bay OKC"
-    },
-    {
-      "code": "OMA",
-      "name": "OMA - Sân bay OMA"
-    },
-    {
-      "code": "ONT",
-      "name": "ONT - Sân bay ONT"
-    },
-    {
-      "code": "ORD",
-      "name": "Chicago O'Hare (ORD)"
-    },
-    {
-      "code": "ORF",
-      "name": "ORF - Sân bay ORF"
-    },
-    {
-      "code": "ORH",
-      "name": "ORH - Sân bay ORH"
-    },
-    {
-      "code": "PAE",
-      "name": "PAE - Sân bay PAE"
-    },
-    {
-      "code": "PBG",
-      "name": "PBG - Sân bay PBG"
-    },
-    {
-      "code": "PBI",
-      "name": "PBI - Sân bay PBI"
-    },
-    {
-      "code": "PDX",
-      "name": "PDX - Sân bay PDX"
-    },
-    {
-      "code": "PGD",
-      "name": "PGD - Sân bay PGD"
-    },
-    {
-      "code": "PHL",
-      "name": "PHL - Sân bay PHL"
-    },
-    {
-      "code": "PHX",
-      "name": "Phoenix Sky Harbor (PHX)"
-    },
-    {
-      "code": "PIA",
-      "name": "PIA - Sân bay PIA"
-    },
-    {
-      "code": "PIE",
-      "name": "PIE - Sân bay PIE"
-    },
-    {
-      "code": "PIH",
-      "name": "PIH - Sân bay PIH"
-    },
-    {
-      "code": "PIT",
-      "name": "PIT - Sân bay PIT"
-    },
-    {
-      "code": "PLN",
-      "name": "PLN - Sân bay PLN"
-    },
-    {
-      "code": "PNS",
-      "name": "PNS - Sân bay PNS"
-    },
-    {
-      "code": "PRC",
-      "name": "PRC - Sân bay PRC"
-    },
-    {
-      "code": "PSC",
-      "name": "PSC - Sân bay PSC"
-    },
-    {
-      "code": "PSE",
-      "name": "PSE - Sân bay PSE"
-    },
-    {
-      "code": "PSG",
-      "name": "PSG - Sân bay PSG"
-    },
-    {
-      "code": "PSM",
-      "name": "PSM - Sân bay PSM"
-    },
-    {
-      "code": "PSP",
-      "name": "PSP - Sân bay PSP"
-    },
-    {
-      "code": "PVD",
-      "name": "PVD - Sân bay PVD"
-    },
-    {
-      "code": "PVU",
-      "name": "PVU - Sân bay PVU"
-    },
-    {
-      "code": "PWM",
-      "name": "PWM - Sân bay PWM"
-    },
-    {
-      "code": "RAP",
-      "name": "RAP - Sân bay RAP"
-    },
-    {
-      "code": "RDD",
-      "name": "RDD - Sân bay RDD"
-    },
-    {
-      "code": "RDM",
-      "name": "RDM - Sân bay RDM"
-    },
-    {
-      "code": "RDU",
-      "name": "RDU - Sân bay RDU"
-    },
-    {
-      "code": "RFD",
-      "name": "RFD - Sân bay RFD"
-    },
-    {
-      "code": "RIC",
-      "name": "RIC - Sân bay RIC"
-    },
-    {
-      "code": "RIW",
-      "name": "RIW - Sân bay RIW"
-    },
-    {
-      "code": "RKS",
-      "name": "RKS - Sân bay RKS"
-    },
-    {
-      "code": "RNO",
-      "name": "RNO - Sân bay RNO"
-    },
-    {
-      "code": "ROA",
-      "name": "ROA - Sân bay ROA"
-    },
-    {
-      "code": "ROC",
-      "name": "ROC - Sân bay ROC"
-    },
-    {
-      "code": "ROW",
-      "name": "ROW - Sân bay ROW"
-    },
-    {
-      "code": "RST",
-      "name": "RST - Sân bay RST"
-    },
-    {
-      "code": "RSW",
-      "name": "RSW - Sân bay RSW"
-    },
-    {
-      "code": "SAF",
-      "name": "SAF - Sân bay SAF"
-    },
-    {
-      "code": "SAN",
-      "name": "SAN - Sân bay SAN"
-    },
-    {
-      "code": "SAT",
-      "name": "SAT - Sân bay SAT"
-    },
-    {
-      "code": "SAV",
-      "name": "SAV - Sân bay SAV"
-    },
-    {
-      "code": "SBA",
-      "name": "SBA - Sân bay SBA"
-    },
-    {
-      "code": "SBN",
-      "name": "SBN - Sân bay SBN"
-    },
-    {
-      "code": "SBP",
-      "name": "SBP - Sân bay SBP"
-    },
-    {
-      "code": "SCC",
-      "name": "SCC - Sân bay SCC"
-    },
-    {
-      "code": "SCE",
-      "name": "SCE - Sân bay SCE"
-    },
-    {
-      "code": "SCK",
-      "name": "SCK - Sân bay SCK"
-    },
-    {
-      "code": "SDF",
-      "name": "SDF - Sân bay SDF"
-    },
-    {
-      "code": "SEA",
-      "name": "Seattle-Tacoma (SEA)"
-    },
-    {
-      "code": "SFB",
-      "name": "SFB - Sân bay SFB"
-    },
-    {
-      "code": "SFO",
-      "name": "San Francisco (SFO)"
-    },
-    {
-      "code": "SGF",
-      "name": "SGF - Sân bay SGF"
-    },
-    {
-      "code": "SGU",
-      "name": "SGU - Sân bay SGU"
-    },
-    {
-      "code": "SHV",
-      "name": "SHV - Sân bay SHV"
-    },
-    {
-      "code": "SIT",
-      "name": "SIT - Sân bay SIT"
-    },
-    {
-      "code": "SJC",
-      "name": "SJC - Sân bay SJC"
-    },
-    {
-      "code": "SJT",
-      "name": "SJT - Sân bay SJT"
-    },
-    {
-      "code": "SJU",
-      "name": "SJU - Sân bay SJU"
-    },
-    {
-      "code": "SLC",
-      "name": "SLC - Sân bay SLC"
-    },
-    {
-      "code": "SLN",
-      "name": "SLN - Sân bay SLN"
-    },
-    {
-      "code": "SMF",
-      "name": "SMF - Sân bay SMF"
-    },
-    {
-      "code": "SNA",
-      "name": "SNA - Sân bay SNA"
-    },
-    {
-      "code": "SPI",
-      "name": "SPI - Sân bay SPI"
-    },
-    {
-      "code": "SPS",
-      "name": "SPS - Sân bay SPS"
-    },
-    {
-      "code": "SRQ",
-      "name": "SRQ - Sân bay SRQ"
-    },
-    {
-      "code": "STL",
-      "name": "STL - Sân bay STL"
-    },
-    {
-      "code": "STS",
-      "name": "STS - Sân bay STS"
-    },
-    {
-      "code": "STT",
-      "name": "STT - Sân bay STT"
-    },
-    {
-      "code": "STX",
-      "name": "STX - Sân bay STX"
-    },
-    {
-      "code": "SUN",
-      "name": "SUN - Sân bay SUN"
-    },
-    {
-      "code": "SUX",
-      "name": "SUX - Sân bay SUX"
-    },
-    {
-      "code": "SWO",
-      "name": "SWO - Sân bay SWO"
-    },
-    {
-      "code": "SYR",
-      "name": "SYR - Sân bay SYR"
-    },
-    {
-      "code": "TLH",
-      "name": "TLH - Sân bay TLH"
-    },
-    {
-      "code": "TOL",
-      "name": "TOL - Sân bay TOL"
-    },
-    {
-      "code": "TPA",
-      "name": "TPA - Sân bay TPA"
-    },
-    {
-      "code": "TRI",
-      "name": "TRI - Sân bay TRI"
-    },
-    {
-      "code": "TTN",
-      "name": "TTN - Sân bay TTN"
-    },
-    {
-      "code": "TUL",
-      "name": "TUL - Sân bay TUL"
-    },
-    {
-      "code": "TUS",
-      "name": "TUS - Sân bay TUS"
-    },
-    {
-      "code": "TVC",
-      "name": "TVC - Sân bay TVC"
-    },
-    {
-      "code": "TWF",
-      "name": "TWF - Sân bay TWF"
-    },
-    {
-      "code": "TXK",
-      "name": "TXK - Sân bay TXK"
-    },
-    {
-      "code": "TYR",
-      "name": "TYR - Sân bay TYR"
-    },
-    {
-      "code": "TYS",
-      "name": "TYS - Sân bay TYS"
-    },
-    {
-      "code": "USA",
-      "name": "USA - Sân bay USA"
-    },
-    {
-      "code": "VCT",
-      "name": "VCT - Sân bay VCT"
-    },
-    {
-      "code": "VLD",
-      "name": "VLD - Sân bay VLD"
-    },
-    {
-      "code": "VPS",
-      "name": "VPS - Sân bay VPS"
-    },
-    {
-      "code": "WRG",
-      "name": "WRG - Sân bay WRG"
-    },
-    {
-      "code": "WYS",
-      "name": "WYS - Sân bay WYS"
-    },
-    {
-      "code": "XNA",
-      "name": "XNA - Sân bay XNA"
-    },
-    {
-      "code": "XWA",
-      "name": "XWA - Sân bay XWA"
-    },
-    {
-      "code": "YAK",
-      "name": "YAK - Sân bay YAK"
-    },
-    {
-      "code": "YUM",
-      "name": "YUM - Sân bay YUM"
-    }
-  ],
-  "times_of_day": [
-    "Morning (05:00 - 11:59)",
-    "Afternoon (12:00 - 16:59)",
-    "Evening (17:00 - 20:59)",
-    "Night (21:00 - 04:59)"
-  ],
-  "models": [
-    {
-      "id": "random_forest_cpu",
-      "name": "Random Forest (Scikit-Learn) [Mô hình Trọng tâm]",
-      "type": "Ensemble Bagging"
-    },
-    {
-      "id": "lightgbm",
-      "name": "LightGBM (Microsoft) [Cực nhanh]",
-      "type": "Gradient Boosting"
-    },
-    {
-      "id": "xgboost",
-      "name": "XGBoost (DMLC) [Macro F1 cao nhất]",
-      "type": "Gradient Boosting"
-    },
-    {
-      "id": "catboost",
-      "name": "CatBoost (Yandex) [Mạnh về Categorical]",
-      "type": "Gradient Boosting"
-    },
-    {
-      "id": "decision_tree",
-      "name": "Decision Tree (Cây đơn lẻ)",
-      "type": "Single Tree"
-    },
-    {
-      "id": "logistic_regression",
-      "name": "Logistic Regression (Baseline tuyến tính)",
-      "type": "Linear"
-    }
-  ],
-  "causes": {
-    "0": {
-      "name": "OnTime_or_MinorDelay",
-      "title": "Đúng giờ hoặc Trễ nhẹ (< 15 phút)",
-      "color": "#10B981",
-      "badge": "success"
-    },
-    "1": {
-      "name": "Carrier Delay",
-      "title": "Trễ do Lỗi Hãng Hàng Không",
-      "color": "#3B82F6",
-      "badge": "primary"
-    },
-    "2": {
-      "name": "Weather Delay",
-      "title": "Trễ do Thời Tiết Cực Đoan",
-      "color": "#F59E0B",
-      "badge": "warning"
-    },
-    "3": {
-      "name": "NAS Delay",
-      "title": "Trễ do Hệ Thống Không Lưu (NAS)",
-      "color": "#8B5CF6",
-      "badge": "secondary"
-    },
-    "4": {
-      "name": "Security Delay",
-      "title": "Trễ do An Ninh Sân Bay",
-      "color": "#EC4899",
-      "badge": "danger"
-    },
-    "5": {
-      "name": "LateAircraft Delay",
-      "title": "Trễ Dây Chuyền do Máy Bay Đến Muộn",
-      "color": "#EF4444",
-      "badge": "danger"
-    }
-  }
+    "models": [
+        {
+            "id": "random_forest_cpu",
+            "name": "Random Forest (Scikit-Learn CPU)"
+        },
+        {
+            "id": "lightgbm",
+            "name": "LightGBM (Microsoft)"
+        },
+        {
+            "id": "xgboost",
+            "name": "XGBoost (DMLC)"
+        },
+        {
+            "id": "catboost",
+            "name": "CatBoost (Yandex)"
+        },
+        {
+            "id": "decision_tree",
+            "name": "Decision Tree"
+        },
+        {
+            "id": "logistic_regression",
+            "name": "Logistic Regression"
+        }
+    ],
+    "carriers": [
+        {
+            "code": "9E",
+            "name": "9E"
+        },
+        {
+            "code": "AA",
+            "name": "AA"
+        },
+        {
+            "code": "AS",
+            "name": "AS"
+        },
+        {
+            "code": "B6",
+            "name": "B6"
+        },
+        {
+            "code": "DL",
+            "name": "DL"
+        },
+        {
+            "code": "F9",
+            "name": "F9"
+        },
+        {
+            "code": "G4",
+            "name": "G4"
+        },
+        {
+            "code": "HA",
+            "name": "HA"
+        },
+        {
+            "code": "MQ",
+            "name": "MQ"
+        },
+        {
+            "code": "NK",
+            "name": "NK"
+        },
+        {
+            "code": "OH",
+            "name": "OH"
+        },
+        {
+            "code": "OO",
+            "name": "OO"
+        },
+        {
+            "code": "UA",
+            "name": "UA"
+        },
+        {
+            "code": "WN",
+            "name": "WN"
+        },
+        {
+            "code": "YX",
+            "name": "YX"
+        }
+    ],
+    "airports": [
+        {
+            "code": "ABE",
+            "name": "ABE"
+        },
+        {
+            "code": "ABI",
+            "name": "ABI"
+        },
+        {
+            "code": "ABQ",
+            "name": "ABQ"
+        },
+        {
+            "code": "ABR",
+            "name": "ABR"
+        },
+        {
+            "code": "ABY",
+            "name": "ABY"
+        },
+        {
+            "code": "ACK",
+            "name": "ACK"
+        },
+        {
+            "code": "ACT",
+            "name": "ACT"
+        },
+        {
+            "code": "ACV",
+            "name": "ACV"
+        },
+        {
+            "code": "ACY",
+            "name": "ACY"
+        },
+        {
+            "code": "ADK",
+            "name": "ADK"
+        },
+        {
+            "code": "ADQ",
+            "name": "ADQ"
+        },
+        {
+            "code": "AEX",
+            "name": "AEX"
+        },
+        {
+            "code": "AGS",
+            "name": "AGS"
+        },
+        {
+            "code": "AKN",
+            "name": "AKN"
+        },
+        {
+            "code": "ALB",
+            "name": "ALB"
+        },
+        {
+            "code": "ALW",
+            "name": "ALW"
+        },
+        {
+            "code": "AMA",
+            "name": "AMA"
+        },
+        {
+            "code": "ANC",
+            "name": "ANC"
+        },
+        {
+            "code": "APN",
+            "name": "APN"
+        },
+        {
+            "code": "ASE",
+            "name": "ASE"
+        },
+        {
+            "code": "ATL",
+            "name": "ATL"
+        },
+        {
+            "code": "ATW",
+            "name": "ATW"
+        },
+        {
+            "code": "AUS",
+            "name": "AUS"
+        },
+        {
+            "code": "AVL",
+            "name": "AVL"
+        },
+        {
+            "code": "AVP",
+            "name": "AVP"
+        },
+        {
+            "code": "AZA",
+            "name": "AZA"
+        },
+        {
+            "code": "AZO",
+            "name": "AZO"
+        },
+        {
+            "code": "BDL",
+            "name": "BDL"
+        },
+        {
+            "code": "BET",
+            "name": "BET"
+        },
+        {
+            "code": "BFF",
+            "name": "BFF"
+        },
+        {
+            "code": "BFL",
+            "name": "BFL"
+        },
+        {
+            "code": "BGM",
+            "name": "BGM"
+        },
+        {
+            "code": "BGR",
+            "name": "BGR"
+        },
+        {
+            "code": "BHM",
+            "name": "BHM"
+        },
+        {
+            "code": "BIH",
+            "name": "BIH"
+        },
+        {
+            "code": "BIL",
+            "name": "BIL"
+        },
+        {
+            "code": "BIS",
+            "name": "BIS"
+        },
+        {
+            "code": "BJI",
+            "name": "BJI"
+        },
+        {
+            "code": "BLI",
+            "name": "BLI"
+        },
+        {
+            "code": "BLV",
+            "name": "BLV"
+        }
+    ]
 }

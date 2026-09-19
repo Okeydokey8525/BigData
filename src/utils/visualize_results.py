@@ -327,3 +327,241 @@ def plot_feature_importance_individual(feat_imp_dict, output_path, model_name):
     plt.savefig(output_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"  [✓] Đã tạo biểu đồ riêng Feature Importance: {output_path}")
+
+# ==============================================================================
+# 4. CÁC BIỂU ĐỒ NÂNG CAO MỚI (RADAR, BUBBLE, GROUPED BAR, HORIZONTAL BAR, RAM)
+# ==============================================================================
+
+def plot_multi_metric_radar(df_metrics, output_path, title="Đánh Giá Đa Chiều 5 Chỉ Số Chất Lượng (Radar Chart - 7 Mô Hình)"):
+    """Vẽ biểu đồ Mạng Nhện / Đa Giác (Radar / Spider Chart) so sánh 5 góc chất lượng của các mô hình."""
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    
+    # Danh sách các chỉ số cần vẽ radar
+    metrics = ['Accuracy (%)', 'Precision (%)', 'Recall (%)', 'Weighted F1 (%)', 'Macro F1 (%)']
+    available_metrics = [m for m in metrics if m in df_metrics.columns]
+    
+    if len(available_metrics) < 3:
+        print("  [!] Không đủ chỉ số để vẽ Radar Chart (cần ít nhất 3 chỉ số).")
+        return
+
+    num_vars = len(available_metrics)
+    angles = np.linspace(0, 2 * np.pi, num_vars, endpoint=False).tolist()
+    angles += angles[:1] # Khép kín vòng tròn
+
+    fig, ax = plt.subplots(figsize=(9, 8), subplot_kw=dict(polar=True))
+    
+    # Bảng màu cho từng mô hình
+    colors = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#EF4444']
+    
+    # Nhãn hiển thị thân thiện trên 5 đỉnh
+    display_labels = [
+        'Accuracy\n(Tổng thể)',
+        'Precision\n(Độ chuẩn xác)',
+        'Recall\n(Độ phủ)',
+        'Weighted F1\n(Cân bằng)',
+        'Macro F1\n(Lớp thiểu số)'
+    ][:num_vars]
+
+    for idx, row in df_metrics.iterrows():
+        model_name = row['Model']
+        values = [row[m] for m in available_metrics]
+        values += values[:1] # Khép kín đường vẽ
+        color = colors[idx % len(colors)]
+        
+        # Chọn độ dày nét: Spark RF và Random Forest CPU nét đậm hơn
+        is_highlight = 'Random Forest' in model_name or 'Spark' in model_name
+        lw = 2.5 if is_highlight else 1.5
+        alpha_fill = 0.12 if is_highlight else 0.05
+        
+        ax.plot(angles, values, label=model_name, color=color, linewidth=lw, marker='o', markersize=4)
+        ax.fill(angles, values, color=color, alpha=alpha_fill)
+
+    ax.set_theta_offset(np.pi / 2)
+    ax.set_theta_direction(-1)
+    ax.set_thetagrids(np.degrees(angles[:-1]), display_labels, fontsize=10.5, fontweight='bold')
+    
+    # Thang đo từ 0 đến 100%
+    ax.set_ylim(0, 100)
+    ax.set_yticks([20, 40, 60, 80, 100])
+    ax.set_yticklabels(["20%", "40%", "60%", "80%", "100%"], fontsize=8.5, color="#64748B")
+    ax.grid(True, linestyle='--', color='#CBD5E1', alpha=0.8)
+
+    ax.set_title(title, fontsize=13, weight='bold', pad=25, color='#0F172A')
+    ax.legend(loc='upper right', bbox_to_anchor=(1.35, 1.1), fontsize=9.5, frameon=True, facecolor='#F8FAFC')
+    
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"  [✓] Đã tạo biểu đồ mạng nhện Radar Chart: {output_path}")
+
+def plot_accuracy_vs_speed_bubble(df_metrics, output_path, title="Cân Bằng Hiệu Năng & Tốc Độ Huấn Luyện (Bubble Trade-off Plot)"):
+    """Vẽ biểu đồ bong bóng phân tán (Bubble Chart): F1 vs Training Time vs RAM Usage."""
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    col_time = next((c for c in ["Train Time (s)", "Training Time (s)", "Time (s)"] if c in df_metrics.columns), "Train Time (s)")
+    col_ram = next((c for c in ["RAM Usage (MB)", "Peak RAM (MB)", "RAM (MB)"] if c in df_metrics.columns), "RAM Usage (MB)")
+
+    fig, ax = plt.subplots(figsize=(10.5, 6.8))
+
+    x = df_metrics[col_time].values
+    y = df_metrics["Weighted F1 (%)"].values
+    
+    # Kích thước bong bóng tỷ lệ thuận với lượng RAM tiêu thụ
+    if col_ram in df_metrics.columns:
+        rams = df_metrics[col_ram].values
+        sizes = [max(120, r * 0.8) for r in rams]
+    else:
+        sizes = [300] * len(x)
+        rams = [0] * len(x)
+
+    colors = ['#10B981', '#3B82F6', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#EF4444']
+
+    for i, row in df_metrics.iterrows():
+        clr = colors[i % len(colors)]
+        sc = ax.scatter(x[i], y[i], s=sizes[i], color=clr, alpha=0.7, edgecolors='black', linewidth=1.5, zorder=5)
+        
+        # Chú thích tên mô hình ngay cạnh bong bóng
+        label_text = f"{row['Model']}\n({x[i]:.1f}s | F1: {y[i]:.1f}%)"
+        ax.annotate(
+            label_text,
+            (x[i], y[i]),
+            xytext=(10, 8),
+            textcoords='offset points',
+            fontsize=9.5,
+            fontweight='bold',
+            color='#1E293B',
+            bbox=dict(boxstyle="round,pad=0.3", fc="#FFFFFF", ec=clr, alpha=0.9)
+        )
+
+    ax.set_xscale('log') # Thang log vì thời gian có thể chênh lệch từ 0.5s đến 100s
+    ax.set_xlabel("Thời Gian Huấn Luyện - log scale (Giây)", fontsize=11.5, labelpad=10)
+    ax.set_ylabel("Chỉ Số Weighted F1-Score (%)", fontsize=11.5, labelpad=10)
+    ax.set_ylim([max(0, min(y) - 15), 100])
+    ax.grid(True, which="both", ls="--", alpha=0.4)
+
+    # Chú thích kích thước bong bóng
+    ax.text(0.02, 0.05, "● Kích thước bong bóng thể hiện dung lượng RAM tiêu thụ đỉnh (MB)",
+            transform=ax.transAxes, fontsize=9.5, fontstyle='italic', color='#64748B')
+
+    ax.set_title(title, fontsize=13, weight='bold', pad=18, color='#0F172A')
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"  [✓] Đã tạo biểu đồ bong bóng Bubble Plot: {output_path}")
+
+def plot_models_grouped_bar(df_metrics, output_path, title="So Sánh Đối Đầu Chỉ Số Accuracy & F1-Score (7 Mô Hình)"):
+    """Vẽ biểu đồ cột kép (Grouped Bar) so sánh Accuracy và Weighted F1."""
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    models = df_metrics["Model"].tolist()
+    x = np.arange(len(models))
+    width = 0.35
+
+    rects1 = ax.bar(x - width/2, df_metrics["Accuracy (%)"], width, label="Accuracy (%)", color="#3B82F6", edgecolor="white", linewidth=1)
+    rects2 = ax.bar(x + width/2, df_metrics["Weighted F1 (%)"], width, label="Weighted F1 (%)", color="#10B981", edgecolor="white", linewidth=1)
+
+    ax.set_ylabel("Tỷ lệ (%)", fontsize=11.5)
+    ax.set_title(title, fontsize=13, weight="bold", pad=20, color='#0F172A')
+    ax.set_xticks(x)
+    ax.set_xticklabels(models, rotation=15, ha="right", fontsize=10.5, weight="bold")
+    ax.legend(loc="upper right", frameon=True, facecolor="#F8FAFC")
+    ax.grid(axis="y", linestyle="--", alpha=0.5)
+    ax.set_ylim([0, 105])
+
+    for rect in rects1:
+        h = rect.get_height()
+        ax.annotate(f"{h:.1f}%", xy=(rect.get_x() + rect.get_width() / 2, h), xytext=(0, 3),
+                    textcoords="offset points", ha="center", va="bottom", fontsize=9, fontweight="bold", color="#1D4ED8")
+
+    for rect in rects2:
+        h = rect.get_height()
+        ax.annotate(f"{h:.1f}%", xy=(rect.get_x() + rect.get_width() / 2, h), xytext=(0, 3),
+                    textcoords="offset points", ha="center", va="bottom", fontsize=9, fontweight="bold", color="#047857")
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"  [✓] Đã tạo biểu đồ cột kép Grouped Bar: {output_path}")
+
+def plot_models_training_time_horizontal_bar(df_metrics, output_path, title="Xếp Hạng Thời Gian Huấn Luyện Các Mô Hình (Training Time)"):
+    """Vẽ biểu đồ thanh ngang xếp hạng thời gian huấn luyện từ nhanh nhất đến lâu nhất."""
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    col_time = next((c for c in ["Train Time (s)", "Training Time (s)", "Time (s)"] if c in df_metrics.columns), "Train Time (s)")
+    
+    df_sorted = df_metrics.sort_values(by=col_time, ascending=True)
+    
+    fig, ax = plt.subplots(figsize=(10, 5.5))
+    colors = sns.color_palette("rocket_r", len(df_sorted))
+    
+    bars = ax.barh(df_sorted["Model"], df_sorted[col_time], color=colors, edgecolor="#CBD5E1")
+    
+    for bar in bars:
+        w = bar.get_width()
+        ax.text(w + (df_sorted[col_time].max() * 0.015), bar.get_y() + bar.get_height()/2,
+                f"{w:.2f}s", va="center", fontsize=9.5, fontweight="bold", color="#0F172A")
+
+    ax.set_xlabel("Thời gian huấn luyện (Giây) - Càng ngắn càng tốt", fontsize=11, labelpad=8)
+    ax.set_title(title, fontsize=12.5, weight="bold", pad=15, color='#0F172A')
+    ax.grid(axis="x", linestyle="--", alpha=0.5)
+    ax.set_xlim(0, df_sorted[col_time].max() * 1.15)
+    
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"  [✓] Đã tạo biểu đồ thanh ngang Training Time: {output_path}")
+
+def plot_models_latency_bar(df_metrics, output_path, title="So Sánh Độ Trễ Suy Luận (Inference Latency - ms / 1,000 mẫu)"):
+    """Vẽ biểu đồ cột so sánh độ trễ suy luận (ms / 1.000 mẫu)."""
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    col_lat = next((c for c in ["Latency (ms/1k)", "Latency (per 1k ms)", "Latency (ms)"] if c in df_metrics.columns), "Latency (ms/1k)")
+    
+    fig, ax = plt.subplots(figsize=(11, 5.5))
+    colors = sns.color_palette("mako", len(df_metrics))
+    
+    bars = ax.bar(df_metrics["Model"], df_metrics[col_lat], color=colors, edgecolor="white", width=0.55)
+    
+    for bar in bars:
+        h = bar.get_height()
+        ax.annotate(f"{h:.1f}ms", xy=(bar.get_x() + bar.get_width() / 2, h), xytext=(0, 3),
+                    textcoords="offset points", ha="center", va="bottom", fontsize=9.5, fontweight="bold", color="#1E293B")
+
+    ax.set_ylabel("Độ trễ suy luận (ms / 1,000 mẫu) - Càng thấp càng tốt", fontsize=11)
+    ax.set_title(title, fontsize=12.5, weight="bold", pad=18, color='#0F172A')
+    ax.set_xticklabels(df_metrics["Model"], rotation=15, ha="right", fontsize=10, weight="bold")
+    ax.grid(axis="y", linestyle="--", alpha=0.5)
+    ax.set_ylim(0, df_metrics[col_lat].max() * 1.18)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"  [✓] Đã tạo biểu đồ cột Latency: {output_path}")
+
+def plot_peak_ram_comparison(df_metrics, output_path, title="So Sánh Mức Tiêu Thụ Bộ Nhớ Đỉnh (Peak RAM Usage - MB)"):
+    """Vẽ biểu đồ cột so sánh lượng RAM tiêu thụ đỉnh giữa các mô hình."""
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+    col_ram = next((c for c in ["RAM Usage (MB)", "Peak RAM (MB)", "RAM (MB)"] if c in df_metrics.columns), None)
+    
+    if not col_ram or col_ram not in df_metrics.columns:
+        print("  [!] Không tìm thấy cột RAM để vẽ biểu đồ Peak RAM.")
+        return
+
+    fig, ax = plt.subplots(figsize=(11, 5.5))
+    colors = sns.color_palette("flare", len(df_metrics))
+    
+    bars = ax.bar(df_metrics["Model"], df_metrics[col_ram], color=colors, edgecolor="white", width=0.55)
+    
+    for bar in bars:
+        h = bar.get_height()
+        ax.annotate(f"{h:.1f} MB", xy=(bar.get_x() + bar.get_width() / 2, h), xytext=(0, 3),
+                    textcoords="offset points", ha="center", va="bottom", fontsize=9.5, fontweight="bold", color="#831843")
+
+    ax.set_ylabel("Bộ nhớ RAM đỉnh (MB)", fontsize=11)
+    ax.set_title(title, fontsize=12.5, weight="bold", pad=18, color='#0F172A')
+    ax.set_xticklabels(df_metrics["Model"], rotation=15, ha="right", fontsize=10, weight="bold")
+    ax.grid(axis="y", linestyle="--", alpha=0.5)
+    ax.set_ylim(0, df_metrics[col_ram].max() * 1.18)
+
+    plt.tight_layout()
+    plt.savefig(output_path, dpi=300, bbox_inches='tight')
+    plt.close()
+    print(f"  [✓] Đã tạo biểu đồ cột Peak RAM: {output_path}")

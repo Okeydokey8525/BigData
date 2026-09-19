@@ -198,57 +198,64 @@ def get_metadata():
     return JSONResponse(content=METADATA)
 
 @app.get("/api/metrics")
-def get_metrics_table(dataset: str = "10k"):
-    """Trả về bảng đối sánh hiệu năng các mô hình theo tập dữ liệu (10k hoặc 7m)."""
-    if dataset == "7m":
-        target_path = os.path.join(BASE_DIR, "results/full_7m/metrics/grand_model_comparison_7m.csv")
-    else:
-        grand_10k = os.path.join(BASE_DIR, "results/sample_10k/metrics/grand_model_comparison.csv")
-        target_path = grand_10k if os.path.exists(grand_10k) else os.path.join(METRICS_DIR, "grand_model_comparison.csv")
-    
-    if not os.path.exists(target_path):
-        return JSONResponse(content=[])
-    df = pd.read_csv(target_path)
-    return JSONResponse(content=df.to_dict(orient="records"))
+def get_metrics_table(dataset: str = "7m"):
+    """Trả về bảng đối sánh hiệu năng 7 mô hình học máy trên tập dữ liệu 7 triệu dòng."""
+    candidates = [
+        os.path.join(METRICS_DIR, "grand_model_comparison_7m.csv"),
+        os.path.join(BASE_DIR, "results/full_7m/metrics/grand_model_comparison_7m.csv"),
+        os.path.join(METRICS_DIR, "grand_model_comparison.csv")
+    ]
+    for target_path in candidates:
+        if os.path.exists(target_path):
+            df = pd.read_csv(target_path)
+            return JSONResponse(content=df.to_dict(orient="records"))
+    return JSONResponse(content=[])
 
 @app.get("/api/pipeline-stages")
 def get_pipeline_stages():
     """Trả về bảng số liệu chi tiết bóc tách thời gian 4 giai đoạn và toàn trình (7.07M dòng)."""
-    stages_path = os.path.join(BASE_DIR, "results/full_7m/metrics/pipeline_stages_time_breakdown.csv")
-    if not os.path.exists(stages_path):
-        return JSONResponse(content=[])
-    df = pd.read_csv(stages_path)
-    return JSONResponse(content=df.to_dict(orient="records"))
+    candidates = [
+        os.path.join(METRICS_DIR, "pipeline_stages_breakdown_7m.csv"),
+        os.path.join(BASE_DIR, "results/full_7m/metrics/pipeline_stages_time_breakdown.csv")
+    ]
+    for stages_path in candidates:
+        if os.path.exists(stages_path):
+            df = pd.read_csv(stages_path)
+            return JSONResponse(content=df.to_dict(orient="records"))
+    return JSONResponse(content=[])
 
 @app.get("/api/figures/{filename}")
-def get_figure(filename: str, dataset: str = "auto"):
-    """Cung cấp các biểu đồ khoa học dạng ảnh PNG hỗ trợ phân cấp folder."""
-    # Tìm kiếm theo thứ tự ưu tiên
-    search_paths = []
-    if dataset == "7m":
-        search_paths.extend([
-            os.path.join(BASE_DIR, "results/full_7m/figures/combined", filename),
-            os.path.join(BASE_DIR, "results/full_7m/figures/individual", filename),
-            os.path.join(BASE_DIR, "results/full_7m/figures", filename)
-        ])
-    elif dataset == "10k":
-        search_paths.extend([
-            os.path.join(BASE_DIR, "results/sample_10k/figures/combined", filename),
-            os.path.join(BASE_DIR, "results/sample_10k/figures/individual", filename),
-            os.path.join(BASE_DIR, "results/sample_10k/figures", filename)
-        ])
-    else: # auto
-        search_paths.extend([
-            os.path.join(BASE_DIR, "results/full_7m/figures/combined", filename),
-            os.path.join(BASE_DIR, "results/full_7m/figures/individual", filename),
-            os.path.join(BASE_DIR, "results/sample_10k/figures/combined", filename),
-            os.path.join(BASE_DIR, "results/sample_10k/figures/individual", filename),
-            os.path.join(FIGURES_DIR, filename)
-        ])
+def get_figure(filename: str, dataset: str = "7m"):
+    """Cung cấp các biểu đồ khoa học dạng ảnh PNG hỗ trợ phân cấp folder và map alias linh hoạt."""
+    # Danh sách các tên tệp khả dĩ (bao gồm tên gốc và alias chuyển đổi tương thích)
+    possible_names = [filename]
+    if filename.startswith("confusion_matrix_"):
+        model_part = filename.replace("confusion_matrix_", "").replace(".png", "")
+        possible_names.append(f"cm_{model_part}_7m.png")
+        possible_names.append(f"cm_{model_part}.png")
+    elif filename.startswith("feature_importance_"):
+        model_part = filename.replace("feature_importance_", "").replace(".png", "")
+        possible_names.append(f"feat_imp_{model_part}_7m.png")
+        possible_names.append(f"feat_imp_{model_part}.png")
+    elif filename == "grand_rf_comparison.png":
+        possible_names.append("grand_rf_showdown_7m.png")
+    elif filename == "baseline_comparison_dashboard.png":
+        possible_names.append("grand_comparison_7m_dashboard.png")
 
-    for p in search_paths:
-        if os.path.exists(p):
-            return FileResponse(p, media_type="image/png")
+    search_dirs = [
+        os.path.join(FIGURES_DIR, "combined"),
+        os.path.join(FIGURES_DIR, "individual"),
+        FIGURES_DIR,
+        os.path.join(BASE_DIR, "results/full_7m/figures/combined"),
+        os.path.join(BASE_DIR, "results/full_7m/figures/individual"),
+        os.path.join(BASE_DIR, "results/full_7m/figures")
+    ]
+
+    for fname in possible_names:
+        for sdir in search_dirs:
+            p = os.path.join(sdir, fname)
+            if os.path.exists(p):
+                return FileResponse(p, media_type="image/png")
 
     raise HTTPException(status_code=404, detail=f"Hình ảnh '{filename}' không tồn tại.")
 
