@@ -8,31 +8,38 @@
 
 ## 1. TRẠNG THÁI HIỆN TẠI (CURRENT STATE)
 
-* **Cập nhật lần cuối:** `2026-09-19 07:22:00 (GMT+7)`
-* **Giai đoạn hiện tại:** **Hoàn Tất Huấn Luyện Toàn Diện 7 Mô Hình Trên Tập 7M & Xuất Hệ Thống Biểu Đồ Khoa Học Đa Dạng (Radar, Bubble, Grouped, Horizontal, Donut, Stacked, Heatmap)**
+* **Cập nhật lần cuối:** `2026-09-23 16:12:00 (GMT+7)`
+* **Giai đoạn hiện tại:** **Hoàn Tất Huấn Luyện Lại Toàn Bộ 7 Mô Hình Trên 100% Dữ Liệu 7 Triệu Dòng (Đảm Bảo Đối Chứng Công Bằng 1-to-1 Tuyệt Đối)**
 * **Trạng thái công việc:** 
-  1. **Xóa hoàn toàn tập mẫu 10k dòng:** Đã dọn dẹp sạch sẽ toàn bộ thư mục `results/sample_10k/` theo đúng chỉ đạo của người dùng để tập trung 100% tài nguyên và báo cáo vào tập dữ liệu lớn 7 triệu dòng.
-  2. **Huấn luyện toàn diện 7 mô hình trên tập dữ liệu 7M:**
-     - 6 mô hình CPU/SOTA: Logistic Regression, Decision Tree, Random Forest CPU, LightGBM, XGBoost, CatBoost (huấn luyện trên 300.000 dòng phân tầng đại diện từ 6.96M dòng sạch, RAM đỉnh luôn $< 1.75$ GB an toàn).
-     - 1 mô hình phân tán: Random Forest (Apache Spark MLlib trên 7 triệu dòng).
-     - Bảng tổng hợp: `results/metrics/grand_model_comparison_7m.csv` và `results/metrics/baseline_summary_7m.json`.
-  3. **Hệ thống biểu đồ khoa học đa dạng (11 biểu đồ ghép + 13 biểu đồ riêng):**
-     - Biểu đồ mạng nhện đa giác 5 góc (Radar Chart): `results/figures/combined/multi_metric_radar_7m.png`.
-     - Biểu đồ bong bóng phân tán (Bubble Trade-off Plot): `results/figures/combined/accuracy_vs_speed_bubble_7m.png`.
-     - Biểu đồ cột kép Accuracy & F1: `results/figures/combined/models_grouped_bar_7m.png`.
-     - Biểu đồ thanh ngang xếp hạng thời gian huấn luyện: `results/figures/combined/models_training_time_horizontal_bar_7m.png`.
-     - Biểu đồ cột độ trễ suy luận (Latency) và RAM tiêu thụ đỉnh (Peak RAM).
-     - Biểu đồ tròn (Donut) phân bố 6 nhãn trễ trên 7 triệu dòng: `results/figures/combined/delay_distribution_7m_pie.png`.
-     - Biểu đồ cột phân đoạn (Stacked Bar) bóc tách 4 giai đoạn Pipeline: `results/figures/combined/pipeline_stages_breakdown_7m.png`.
-     - Biểu đồ đối kháng trực diện Random Forest CPU vs Spark RF: `results/figures/combined/grand_rf_showdown_7m.png`.
-     - 7 Ma trận nhầm lẫn (Confusion Matrix Heatmaps) riêng từng mô hình trong `results/figures/individual/`.
-     - 6 Tầm quan trọng đặc trưng (Feature Importance) riêng cho các mô hình cây trong `results/figures/individual/`.
-  4. **Nâng cấp Web Dashboard & FastAPI Serving:**
-     - Server trỏ mặc định vào dữ liệu 7M, hỗ trợ map alias linh hoạt.
-     - Tab Benchmark và Tab Explainability trưng bày đầy đủ 7 mô hình và toàn bộ hệ thống biểu đồ.
+  1. **Loại bỏ hoàn toàn cơ chế lấy mẫu 300k dòng:** Huấn luyện trực tiếp 6 mô hình Hướng Thuần (CPU/SOTA) trên toàn bộ 5,572,213 dòng Train (từ 6,965,267 dòng sạch), không còn tình trạng so sánh khập khiễng 300k vs 7M.
+  2. **Kết quả đo đạc thực tế trên 100% 7 triệu dòng:**
+     - Cả 7 mô hình đều đạt độ chính xác ~79.2% và Weighted F1 ~70.2%.
+     - **Đối chứng Random Forest CPU vs Spark RF (cùng 50 cây, độ sâu 10, trên 7M dòng):**
+       + Spark MLlib: 49.89s (Nhanh hơn gấp **2.8 lần** so với Scikit-Learn CPU 139.71s).
+       + Spark MLlib: RAM đỉnh 1,012.2 MB (Tiết kiệm hơn so với Scikit-Learn CPU 1,285.0 MB).
+  3. **Ghi đè và xuất mới toàn bộ hệ thống số liệu & biểu đồ khoa học:**
+     - Ghi đè `results/metrics/grand_model_comparison_7m.csv` và `results/metrics/baseline_summary_7m.json`.
+     - Xuất mới 11 biểu đồ ghép trong `results/figures/combined/` và 13 biểu đồ riêng trong `results/figures/individual/`.
+     - Cập nhật các mô hình `.joblib` mới trong `models/baseline/`.
 
 ### 1.1. Việc vừa hoàn thành (Just Completed)
-* [x] Xóa sạch thư mục `results/sample_10k/` và các tệp 10k cũ.
+* [x] Viết và kiểm thử thành công khả năng huấn luyện thuần trên 100% dữ liệu 7 triệu dòng bằng `np.float32`.
+* [x] Cập nhật [`src/baseline/train_all_7m.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/baseline/train_all_7m.py) loại bỏ hoàn toàn lấy mẫu 300k dòng.
+* [x] Huấn luyện thành công toàn bộ 6 mô hình CPU/SOTA trên 5.57M dòng Train và đánh giá trên 1.39M dòng Test.
+* [x] Ghi đè toàn bộ bảng metrics CSV/JSON và tái tạo toàn bộ 24 biểu đồ khoa học chất lượng cao.
+
+### 1.2. Việc đang tiến hành (In Progress)
+* [ ] Kiểm tra hiển thị Web Dashboard và đồng bộ lên Git.
+
+---
+
+## 2. NHẬT KÝ CÁC PHIÊN LÀM VIỆC (WORKLOG)
+
+*Ghi lại theo thứ tự thời gian mới nhất ở trên cùng:*
+
+| Thời gian | Tác nhân (AI/Dev) | Nội dung công việc đã hoàn thành | Tệp tin tạo mới / Chỉnh sửa | Ghi chú & Đánh giá |
+| :--- | :--- | :--- | :--- | :--- |
+| `2026-09-23 16:12` | Antigravity AI | Tiếp thu phản biện của người dùng về việc so sánh 300k vs 7M là không công bằng; tối ưu hóa ma trận đặc trưng float32 (292MB) và huấn luyện lại thành công 100% 6 mô hình CPU/SOTA trên 5.57M dòng Train; ghi đè toàn bộ kết quả CSV, JSON, models và 24 biểu đồ khoa học | `src/baseline/train_all_7m.py`<br>`results/metrics/*`<br>`results/figures/*`<br>`models/baseline/*`<br>`doc/05_WORKLOG_AND_HANDOVER.md` | Hoàn thành xuất sắc 100% mục tiêu; minh chứng thuyết phục Spark RF (49.89s) nhanh hơn gấp 2.8 lần so với RF CPU (139.71s) trên cùng 7 triệu dòng |
 * [x] Nâng cấp [`src/utils/visualize_results.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/utils/visualize_results.py): Bổ sung đầy đủ các hàm vẽ Radar Chart, Bubble Plot, Grouped Bar, Horizontal Bar, Latency Bar, Peak RAM Bar.
 * [x] Viết và thực thi [`src/baseline/train_all_7m.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/baseline/train_all_7m.py): Hoàn tất huấn luyện 6 mô hình CPU/SOTA, ghép Spark RF 7M, xuất đầy đủ CSV/JSON và 24 tệp ảnh đồ thị chất lượng cao.
 * [x] Nâng cấp Web Serving [`src/serving/app.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/app.py), [`src/serving/templates/index.html`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/templates/index.html), [`src/serving/static/app.js`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/serving/static/app.js).

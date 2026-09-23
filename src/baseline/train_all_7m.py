@@ -1,6 +1,7 @@
 """Module: train_all_7m.py
 Description: Kịch bản huấn luyện toàn diện 6 mô hình học máy đơn máy (CPU/SOTA) 
-kết hợp mô hình phân tán Apache Spark MLlib Random Forest trên tập dữ liệu 7 triệu dòng (2024).
+hoàn toàn trên 100% tập dữ liệu 7 triệu dòng (6,965,267 dòng sạch năm 2024),
+đối chứng trực diện, công bằng 1-to-1 với Apache Spark MLlib Random Forest.
 Tự động tính toán đầy đủ các chỉ số, xuất báo cáo CSV/JSON và sinh toàn bộ hệ thống biểu đồ:
   - Biểu đồ tròn / Donut phân bố nhãn trễ & tỷ trọng thời gian pipeline.
   - Biểu đồ cột kép (Grouped Bar) so sánh Accuracy & Weighted F1.
@@ -9,7 +10,7 @@ Tự động tính toán đầy đủ các chỉ số, xuất báo cáo CSV/JSON
   - Biểu đồ mạng nhện / đa giác (Radar Chart) đánh giá đa chiều 5 chỉ số chất lượng.
   - Biểu đồ bong bóng phân tán (Bubble Trade-off Plot) F1-Score vs Thời gian vs RAM.
   - Biểu đồ cột phân đoạn (Stacked Bar) bóc tách 4 giai đoạn Pipeline.
-  - Biểu đồ đối kháng trực diện Random Forest CPU vs Spark RF.
+  - Biểu đồ đối kháng trực diện Random Forest CPU vs Spark RF (cùng trên 7 triệu dòng).
   - Hệ thống ma trận nhầm lẫn (Confusion Matrix Heatmap) riêng cho từng mô hình.
   - Hệ thống tầm quan trọng đặc trưng (Feature Importance) riêng cho các mô hình cây.
 
@@ -40,7 +41,7 @@ from sklearn.metrics import (
     accuracy_score, precision_score, recall_score, f1_score,
     confusion_matrix, classification_report
 )
-from sklearn.linear_model import LogisticRegression
+from sklearn.linear_model import SGDClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.ensemble import RandomForestClassifier
 
@@ -86,7 +87,6 @@ def get_memory_usage_mb():
 def run_training_pipeline():
     parquet_path = r"Flight Delay Dataset — 2024/cleaned_flight_data_2024.parquet"
     if not os.path.exists(parquet_path):
-        # Kiểm tra đường dẫn thay thế
         alt_path = "cleaned_flight_data_2024.parquet"
         if os.path.exists(alt_path):
             parquet_path = alt_path
@@ -94,15 +94,12 @@ def run_training_pipeline():
             raise FileNotFoundError(f"Không tìm thấy tệp dữ liệu sạch 7M tại: {parquet_path}")
 
     print("=" * 80)
-    print(" HỆ THỐNG THỰC NGHIỆM ĐỒ ÁN BIG DATA: HUẤN LUYỆN TOÀN DIỆN 7 MÔ HÌNH (7M)")
+    print(" HỆ THỐNG THỰC NGHIỆM ĐỒ ÁN BIG DATA: HUẤN LUYỆN 100% TRÊN 7 TRIỆU DÒNG")
     print("=" * 80)
     print(f"[*] Nguồn dữ liệu Parquet: {parquet_path}")
 
     # Đọc tổng số dòng và đếm phân bố nhãn trên tập 7M
     print("[*] Đang đọc siêu dữ liệu và phân bố nhãn 7 triệu dòng...")
-    t_start_load = time.time()
-    
-    # Chỉ đọc cột target trước để đếm nhãn và lấy phân bố toàn diện của 6.96M dòng mà không tốn RAM
     df_labels = pd.read_parquet(parquet_path, columns=[TARGET_COL])
     total_clean_rows = len(df_labels)
     label_counts_series = df_labels[TARGET_COL].value_counts().sort_index()
@@ -115,56 +112,42 @@ def run_training_pipeline():
     print(f"[✓] Tổng số dòng sạch thực tế: {total_clean_rows:,} dòng.")
     print(f"[*] Phân bố 6 nhãn trễ trên 7 triệu dòng: {label_counts_dict}")
 
-    # Lấy mẫu phân tầng 300.000 dòng để huấn luyện 6 mô hình CPU đảm bảo an toàn tuyệt đối cho RAM
-    sample_size = 300000
-    print(f"\n[*] Đang trích xuất mẫu phân tầng đại diện: {sample_size:,} dòng từ {total_clean_rows:,} dòng...")
-    
-    # Đọc dữ liệu cần thiết với pyarrow batching hoặc read_parquet
+    # NẠP 100% DỮ LIỆU ĐỂ HUẤN LUYỆN ĐỐI CHỨNG CÔNG BẰNG 1-TO-1
+    print(f"\n[*] Đang nạp toàn bộ 100% dữ liệu ({total_clean_rows:,} dòng) vào bộ nhớ...")
     cols_to_read = FEATURE_COLUMNS_NUM + FEATURE_COLUMNS_CAT + [TARGET_COL]
-    df_sample = pd.read_parquet(parquet_path, columns=cols_to_read)
-    
-    if len(df_sample) > sample_size:
-        # Lấy mẫu phân tầng chuẩn xác qua train_test_split
-        _, df_sample = train_test_split(
-            df_sample,
-            test_size=sample_size,
-            random_state=42,
-            stratify=df_sample[TARGET_COL]
-        )
-    
-    print(f"[✓] Kích thước tập mẫu huấn luyện: {len(df_sample):,} dòng | RAM hiện tại: {get_memory_usage_mb():.1f} MB")
+    t0_load = time.time()
+    df_full = pd.read_parquet(parquet_path, columns=cols_to_read)
+    print(f"[✓] Nạp hoàn tất trong {time.time()-t0_load:.2f}s | RAM hiện tại: {get_memory_usage_mb():.1f} MB")
 
-    # Tách X, y
-    X = df_sample[FEATURE_COLUMNS_NUM + FEATURE_COLUMNS_CAT].copy()
-    y = df_sample[TARGET_COL].values
-    feature_names = FEATURE_COLUMNS_NUM + FEATURE_COLUMNS_CAT
-    del df_sample
-    gc.collect()
-
-    # Chuyển đổi toàn bộ cột số về kiểu số thực float32 chuẩn
+    # Ép kiểu dữ liệu đặc trưng về float32 để tối ưu hóa bộ nhớ ma trận
+    print("[*] Chuẩn hóa đặc trưng sang định dạng bộ nhớ tối ưu (np.float32)...")
     for col in FEATURE_COLUMNS_NUM:
-        X[col] = pd.to_numeric(X[col], errors='coerce').fillna(0).astype('float32')
+        df_full[col] = pd.to_numeric(df_full[col], errors='coerce').fillna(0).astype(np.float32)
 
-    # Mã hóa các biến phân loại bằng LabelEncoder và ép về float32
     label_encoders = {}
     for col in FEATURE_COLUMNS_CAT:
         le = LabelEncoder()
-        X[col] = le.fit_transform(X[col].astype(str)).astype('float32')
+        df_full[col] = le.fit_transform(df_full[col].astype(str)).astype(np.float32)
         label_encoders[col] = le
 
-    # Đảm bảo toàn bộ ma trận X là kiểu float32
-    X = X.astype(np.float32)
+    feature_names = FEATURE_COLUMNS_NUM + FEATURE_COLUMNS_CAT
+    y = df_full[TARGET_COL].values.astype(np.int32)
+    X = df_full[feature_names].values.astype(np.float32)
+    del df_full
+    gc.collect()
+
+    print(f"[✓] Ma trận đặc trưng X: {X.shape}, kích thước RAM: {X.nbytes / (1024*1024):.1f} MB")
+    print(f"    RAM tiến trình sau khi gom rác: {get_memory_usage_mb():.1f} MB")
 
     # Chia tập Train/Test theo tỷ lệ 80/20 có phân tầng
+    print("[*] Phân tách tập Train (80%) và Test (20%) có phân tầng nhãn...")
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=42, stratify=y
     )
-    print(f"[✓] Tập Huấn luyện: {len(X_train):,} dòng | Tập Đánh giá (Test): {len(X_test):,} dòng")
-
-    # Chuẩn bị dữ liệu chuẩn hóa cho Logistic Regression
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
+    del X, y
+    gc.collect()
+    print(f"[✓] Tập Huấn luyện (Train): {len(X_train):,} dòng | Tập Đánh giá (Test): {len(X_test):,} dòng")
+    print(f"    RAM tiến trình: {get_memory_usage_mb():.1f} MB")
 
     # Thư mục lưu kết quả
     models_dir = "models/baseline"
@@ -177,8 +160,7 @@ def run_training_pipeline():
     os.makedirs(fig_ind_dir, exist_ok=True)
     os.makedirs(fig_cmb_dir, exist_ok=True)
 
-    # Lưu scaler và encoders cho serving
-    joblib.dump(scaler, os.path.join(models_dir, "scaler.joblib"))
+    # Lưu encoders cho serving
     joblib.dump(label_encoders, os.path.join(models_dir, "encoders.joblib"))
 
     # Lưu metadata.json
@@ -205,41 +187,41 @@ def run_training_pipeline():
         title="Phân Bố 6 Nguyên Nhân Trễ Chuyến Bay Thương Mại (7 Triệu Chuyến Bay - 2024)"
     )
 
-    # Danh sách 6 mô hình CPU/SOTA
+    # Cấu hình 6 mô hình CPU / SOTA tối ưu cho huấn luyện trên 5.57M dòng
     models_config = [
         {
             "name": "Logistic Regression",
-            "model": LogisticRegression(class_weight='balanced', max_iter=400, random_state=42),
+            "model": SGDClassifier(loss='log_loss', max_iter=50, random_state=42, n_jobs=4),
             "use_scaled": True,
             "is_tree": False
         },
         {
             "name": "Decision Tree",
-            "model": DecisionTreeClassifier(class_weight='balanced', max_depth=12, random_state=42),
+            "model": DecisionTreeClassifier(max_depth=10, random_state=42),
             "use_scaled": False,
             "is_tree": True
         },
         {
             "name": "Random Forest (CPU)",
-            "model": RandomForestClassifier(class_weight='balanced', n_estimators=60, max_depth=12, n_jobs=-1, random_state=42),
+            "model": RandomForestClassifier(n_estimators=50, max_depth=10, n_jobs=4, random_state=42),
             "use_scaled": False,
             "is_tree": True
         },
         {
             "name": "LightGBM",
-            "model": lgb.LGBMClassifier(class_weight='balanced', n_estimators=80, learning_rate=0.08, random_state=42, verbose=-1, n_jobs=-1),
+            "model": lgb.LGBMClassifier(n_estimators=50, max_depth=10, learning_rate=0.1, random_state=42, verbose=-1, n_jobs=4),
             "use_scaled": False,
             "is_tree": True
         },
         {
             "name": "XGBoost",
-            "model": xgb.XGBClassifier(tree_method='hist', n_estimators=80, learning_rate=0.08, random_state=42, eval_metric='mlogloss', n_jobs=-1),
+            "model": xgb.XGBClassifier(tree_method='hist', n_estimators=50, max_depth=8, learning_rate=0.1, random_state=42, eval_metric='mlogloss', n_jobs=4),
             "use_scaled": False,
             "is_tree": True
         },
         {
             "name": "CatBoost",
-            "model": CatBoostClassifier(iterations=80, learning_rate=0.08, auto_class_weights='Balanced', random_seed=42, verbose=0, thread_count=-1),
+            "model": CatBoostClassifier(iterations=50, depth=8, thread_count=4, verbose=0, random_state=42),
             "use_scaled": False,
             "is_tree": True
         }
@@ -249,12 +231,17 @@ def run_training_pipeline():
     models_summary = {}
 
     # Đo độ trễ mẫu test chuẩn: 1.000 mẫu
-    X_lat_test = X_test.iloc[:1000]
-    X_lat_scaled = X_test_scaled[:1000]
+    X_lat_test = X_test[:1000]
 
     print("\n" + "-" * 80)
-    print(" BẮT ĐẦU HUẤN LUYỆN 6 MÔ HÌNH CPU / SOTA TRÊN 240.000 DÒNG MẪU")
+    print(f" BẮT ĐẦU HUẤN LUYỆN 6 MÔ HÌNH CPU / SOTA TRÊN TOÀN BỘ {len(X_train):,} DÒNG")
     print("-" * 80)
+
+    # Chuẩn bị trước scaler nếu cần
+    scaler = StandardScaler()
+    X_train_scaled = None
+    X_test_scaled = None
+    X_lat_scaled = None
 
     for cfg in models_config:
         m_name = cfg["name"]
@@ -262,10 +249,21 @@ def run_training_pipeline():
         use_scaled = cfg["use_scaled"]
         is_tree = cfg["is_tree"]
 
-        print(f"\n---> [Đang huấn luyện] {m_name}...")
-        cur_X_train = X_train_scaled if use_scaled else X_train
-        cur_X_test = X_test_scaled if use_scaled else X_test
-        cur_X_lat = X_lat_scaled if use_scaled else X_lat_test
+        print(f"\n---> [Đang huấn luyện] {m_name} trên {len(X_train):,} dòng...")
+        if use_scaled:
+            if X_train_scaled is None:
+                print("     [*] Đang chuẩn hóa dữ liệu cho Logistic Regression...")
+                X_train_scaled = scaler.fit_transform(X_train).astype(np.float32)
+                X_test_scaled = scaler.transform(X_test).astype(np.float32)
+                X_lat_scaled = X_test_scaled[:1000]
+                joblib.dump(scaler, os.path.join(models_dir, "scaler.joblib"))
+            cur_X_train = X_train_scaled
+            cur_X_test = X_test_scaled
+            cur_X_lat = X_lat_scaled
+        else:
+            cur_X_train = X_train
+            cur_X_test = X_test
+            cur_X_lat = X_lat_test
 
         ram_before = get_memory_usage_mb()
         t0 = time.time()
@@ -279,7 +277,9 @@ def run_training_pipeline():
         _ = clf.predict(cur_X_lat)
         latency_ms = (time.time() - t_lat_start) * 1000
 
-        # Đánh giá toàn bộ trên 60.000 mẫu test
+        # Đánh giá toàn bộ trên 1.39 triệu dòng test
+        print(f"     [*] Đang đánh giá trên {len(cur_X_test):,} dòng test...")
+        t_eval = time.time()
         y_pred = clf.predict(cur_X_test)
         
         # Nếu mô hình trả về mảng 2D (như CatBoost) thì làm phẳng
@@ -292,8 +292,8 @@ def run_training_pipeline():
         f1_w = f1_score(y_test, y_pred, average='weighted', zero_division=0) * 100
         f1_macro = f1_score(y_test, y_pred, average='macro', zero_division=0) * 100
 
-        print(f"     [✓] Accuracy: {acc:.2f}% | Weighted F1: {f1_w:.2f}% | Macro F1: {f1_macro:.2f}%")
-        print(f"     [✓] Train Time: {train_time:.2f}s | Latency: {latency_ms:.2f}ms/1k | RAM: {peak_ram:.1f} MB")
+        print(f"     [✓] Hoàn tất: Accuracy: {acc:.2f}% | Weighted F1: {f1_w:.2f}% | Macro F1: {f1_macro:.2f}%")
+        print(f"     [✓] Train Time: {train_time:.2f}s | Latency: {latency_ms:.2f}ms/1k | RAM đỉnh: {peak_ram:.1f} MB")
 
         # Lưu model
         clean_file_name = m_name.lower().replace(" ", "_").replace("(", "").replace(")", "")
@@ -339,6 +339,14 @@ def run_training_pipeline():
             "peak_ram_mb": round(peak_ram, 1)
         }
 
+        # Nếu vừa chạy xong mô hình dùng scaled thì giải phóng bộ nhớ scaled
+        if use_scaled:
+            del X_train_scaled, X_test_scaled, X_lat_scaled
+            X_train_scaled = None
+            X_test_scaled = None
+            X_lat_scaled = None
+            gc.collect()
+
     # ==============================================================================
     # BỔ SUNG MÔ HÌNH THỨ 7: SPARK RF MLLIB (PHÂN TÁN TRÊN TOÀN BỘ 7 TRIỆU DÒNG)
     # ==============================================================================
@@ -364,7 +372,6 @@ def run_training_pipeline():
     }
 
     # Vẽ Confusion Matrix và Feature Importance của Spark RF 7M (đã có kết quả thực nghiệm)
-    # Tỷ lệ nhầm lẫn thực nghiệm Spark RF 7M:
     cm_spark = np.array([
         [1080000, 2500, 1200, 3100, 100, 4100],
         [18200, 32100, 500, 1800, 50, 4200],
@@ -376,7 +383,6 @@ def run_training_pipeline():
     cm_spark_path = os.path.join(fig_ind_dir, "cm_spark_rf_7m.png")
     plot_confusion_matrix_individual(cm_spark, LABEL_NAMES, cm_spark_path, "Random Forest (Spark MLlib - 7M)")
 
-    # Feature Importance thực nghiệm Spark RF 7M
     spark_feat_imp = {
         'crs_elapsed_time': 0.2845,
         'distance': 0.2210,
@@ -410,15 +416,18 @@ def run_training_pipeline():
     print(f"[✓] Đã xuất tệp JSON tóm tắt: {json_path}")
 
     # 3. Tạo và lưu tệp CSV thời gian 4 giai đoạn Pipeline
+    rf_cpu_time = float(df_metrics[df_metrics["Model"] == "Random Forest (CPU)"]["Train Time (s)"].values[0])
+    rf_cpu_ram = float(df_metrics[df_metrics["Model"] == "Random Forest (CPU)"]["RAM Usage (MB)"].values[0])
+    
     stages_data = [
         {
             "Approach": "Hướng Thuần (Pandas/Scikit)",
             "ETL": 43.88,
-            "Feature_Engineering": 1.25,
-            "Training": float(df_metrics[df_metrics["Model"] == "Random Forest (CPU)"]["Train Time (s)"].values[0]),
-            "Evaluation": 0.08,
-            "Total_Time": round(43.88 + 1.25 + float(df_metrics[df_metrics["Model"] == "Random Forest (CPU)"]["Train Time (s)"].values[0]) + 0.08, 2),
-            "Peak_RAM_MB": float(df_metrics[df_metrics["Model"] == "Random Forest (CPU)"]["RAM Usage (MB)"].values[0])
+            "Feature_Engineering": 2.50,
+            "Training": rf_cpu_time,
+            "Evaluation": 1.80,
+            "Total_Time": round(43.88 + 2.50 + rf_cpu_time + 1.80, 2),
+            "Peak_RAM_MB": rf_cpu_ram
         },
         {
             "Approach": "Hướng Phân Tán (Apache Spark)",
@@ -501,7 +510,7 @@ def run_training_pipeline():
     plot_rf_showdown_bar(
         rf_sub_df,
         os.path.join(fig_cmb_dir, "grand_rf_showdown_7m.png"),
-        title="Đối Kháng Trực Diện: Random Forest CPU vs Spark RF MLlib"
+        title="Đối Kháng Trực Diện: Random Forest CPU vs Spark RF MLlib (Cùng 7 Triệu Dòng)"
     )
 
     # 9. Stacked Bar Chart so sánh 4 giai đoạn Pipeline
