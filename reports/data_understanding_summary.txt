@@ -1,0 +1,33 @@
+Số dòng: 10,000
+Số cột: 35
+Số dòng trùng hoàn toàn: 0
+
+=== MISSING VALUES ===
+         Thuộc tính  Số missing  Tỷ lệ missing (%)
+  cancellation_code        9878              98.78
+           air_time         164               1.64
+          arr_delay         164               1.64
+actual_elapsed_time         164               1.64
+            taxi_in         127               1.27
+          wheels_on         127               1.27
+           arr_time         127               1.27
+           taxi_out         120               1.20
+         wheels_off         120               1.20
+          dep_delay         116               1.16
+           dep_time         116               1.16
+
+=== CAUSE SUMMARY ===
+                     Số missing  Số bằng 0  Số > 0  Giá trị lớn nhất  Giá trị trung vị
+carrier_delay                 0       8864    1136              2011               0.0
+weather_delay                 0       9859     141               664               0.0
+nas_delay                     0       8944    1056               454               0.0
+security_delay                0       9994       6                22               0.0
+late_aircraft_delay           0       8935    1065               995               0.0
+
+=== NUMBER OF CAUSES PER FLIGHT ===
+ Số nguyên nhân  Số chuyến bay  Tỷ lệ (%)
+              0           7881      78.81
+              1           1033      10.33
+              2            888       8.88
+              3            197       1.97
+              4              1       0.01

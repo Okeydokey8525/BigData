@@ -1,0 +1,105 @@
+# ==============================
+# Python
+# ==============================
+
+# Virtual environments
+.venv/
+venv/
+env/
+menv/
+ENV/
+env.bak/
+menv.bak/
+venv.bak/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Distribution / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# PyInstaller
+*.manifest
+*.spec
+
+# Unit test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+
+# Jupyter Notebook
+.ipynb_checkpoints/
+
+
+# ==============================
+# VS Code
+# ==============================
+
+.vscode/
+
+
+# ==============================
+# Environment / secrets
+# ==============================
+
+.env
+.env.*
+!.env.example
+
+
+# ==============================
+# OS generated files
+# ==============================
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
+
+
+# ==============================
+# Logs
+# ==============================
+
+*.log
+
+
+# ==============================
+# Temporary files
+# ==============================
+
+*.tmp
+*.temp
+*.swp
+*.swo
+
+
+# ==============================
+# Large raw/intermediate/processed datasets
+# ==============================
+
+data/raw/*.csv
+data/interim/flight_data*_cleaned.csv
+data/processed/flight_data*_selected.csv
+
+
+# ==============================
+# Split datasets
+# ==============================
+
+# Keep split datasets if needed
+!data/processed/split/
+!data/processed/split/*.csv
+
+# Ignore the 7m split dataset
+data/processed/split/7m/

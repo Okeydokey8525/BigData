@@ -1,0 +1,14 @@
+﻿feature_1,feature_2,correlation
+crs_dep_time,dep_time,0.9447756677551089
+crs_dep_time,wheels_off,0.9098403609714709
+dep_time,wheels_off,0.963160346784938
+dep_delay,arr_delay,0.9706938552881044
+wheels_on,crs_arr_time,0.8297282812869398
+wheels_on,arr_time,0.95698270836364
+crs_arr_time,arr_time,0.8160621865480486
+crs_elapsed_time,actual_elapsed_time,0.9814250963098695
+crs_elapsed_time,air_time,0.9894456039946891
+crs_elapsed_time,distance,0.983404255736127
+actual_elapsed_time,air_time,0.9864302537504555
+actual_elapsed_time,distance,0.9686406015201803
+air_time,distance,0.9843996137630395
