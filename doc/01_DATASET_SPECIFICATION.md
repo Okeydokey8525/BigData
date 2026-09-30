@@ -108,7 +108,9 @@ Theo đề cương đề tài: **Dự đoán nguyên nhân trễ chuyến bay th
 | `day_of_month` | $1 \to 31$ | `int64` (8 bytes) | `int8` (1 byte) | 1 byte | Giảm **87.5%** | $1 \to 31$ nằm gọn trong $[-128, 127]$. |
 | `day_of_week` | $1 \to 7$ | `int64` (8 bytes) | `int8` (1 byte) | 1 byte | Giảm **87.5%** | $1 \to 7$ nằm gọn trong $[-128, 127]$. |
 | `dep_hour` / `arr_hour` | $0 \to 23$ | `int64` (8 bytes) | `int8` (1 byte) | 1 byte | Giảm **87.5%** | $0 \to 23$ nằm gọn trong $[-128, 127]$. |
+| `dep_min_of_day` / `arr_min_of_day` | $0 \to 1.439$ phút | `int64` (8 bytes) | `int16` (2 bytes) | 2 bytes | Giảm **75.0%** | Số phút trôi qua trong ngày, tối đa $1.439$ phút, an toàn trong $[-32.768, 32.767]$. |
 | `cancelled` / `diverted` | $0 \text{ hoặc } 1$ | `int64` (8 bytes) | `int8` (1 byte) | 1 byte | Giảm **87.5%** | Cờ nhị phân $0/1$. |
+
 | `crs_dep_time` / `crs_arr_time` | $0 \to 2400$ | `int64` (8 bytes) | `int16` (2 bytes) | 2 bytes | Giảm **75.0%** | `int16` chứa tới $32.767$. Định dạng HHMM ($\le 2400$) an toàn tuyệt đối. |
 | `distance` | $31 \to 5.095$ dặm | `float64` (8 bytes) | `int16` (2 bytes) | 2 bytes | Giảm **75.0%** | Khoảng cách nội địa Mỹ max $\approx 5.100$ dặm, nằm an toàn trong $[0, 32.767]$. |
 | `crs_elapsed_time` | $20 \to 700$ phút | `float64` (8 bytes) | `int16` (2 bytes) | 2 bytes | Giảm **75.0%** | Thời gian bay tối đa $\approx 700$ phút, an toàn trong $[0, 32.767]$. |

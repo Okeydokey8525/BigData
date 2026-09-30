@@ -10,11 +10,11 @@
         },
         {
             "id": "xgboost",
-            "name": "XGBoost (DMLC)"
+            "name": "XGBoost (DMLC GPU/CPU)"
         },
         {
             "id": "catboost",
-            "name": "CatBoost (Yandex)"
+            "name": "CatBoost (Yandex GPU/CPU)"
         },
         {
             "id": "decision_tree",

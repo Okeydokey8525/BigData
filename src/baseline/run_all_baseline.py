@@ -57,9 +57,12 @@ FEATURE_COLUMNS_NUM = [
     'day_of_week',
     'dep_hour',
     'arr_hour',
+    'dep_min_of_day',
+    'arr_min_of_day',
     'crs_elapsed_time',
     'distance'
 ]
+
 
 FEATURE_COLUMNS_CAT = [
     'op_unique_carrier',

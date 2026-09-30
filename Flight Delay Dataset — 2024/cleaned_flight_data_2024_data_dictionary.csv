@@ -1,0 +1,42 @@
+﻿column,dtype,null_pct,example_value,meaning_vi
+year,int64,0.0,2024,Năm diễn ra chuyến bay (2024)
+day_of_month,int8,0.0,1,Ngày trong tháng (1 - 31)
+day_of_week,int8,0.0,1,"Ngày trong tuần (1: Thứ Hai, ..., 7: Chủ Nhật)"
+fl_date,str,0.0,2024-01-01,Ngày bay đầy đủ (YYYY-MM-DD)
+op_unique_carrier,str,0.0,9E,"Mã ký hiệu hãng hàng không khai thác (IATA code, ví dụ: 9E, AA, DL, WN)"
+op_carrier_fl_num,float64,0.0,4814,Số hiệu chuyến bay (Flight Number)
+origin,str,0.0,JFK,"Mã IATA sân bay xuất phát (ví dụ: JFK, LAX, DFW)"
+origin_city_name,str,0.0,"New York, NY",Tên thành phố và mã bang xuất phát
+origin_state_nm,str,0.0,New York,Tên đầy đủ của bang xuất phát
+dest,str,0.0,DTW,"Mã IATA sân bay điểm đến (ví dụ: DTW, MIA, SFO)"
+dest_city_name,str,0.0,"Detroit, MI",Tên thành phố và mã bang điểm đến
+dest_state_nm,str,0.0,Michigan,Tên đầy đủ của bang điểm đến
+crs_dep_time,int64,0.0,1252,"Giờ khởi hành dự kiến theo lịch (CRS, định dạng HHMM)"
+dep_time,float64,0.0,1247,Giờ khởi hành thực tế (HHMM)
+dep_delay,float32,0.0,-5.0,"Độ trễ khởi hành tính bằng phút (Số âm: sớm, số dương: trễ)"
+taxi_out,float64,0.0,31,Thời gian máy bay lăn từ cửa ga ra đường băng cất cánh (phút)
+wheels_off,float64,0.0,1318,Thời điểm bánh máy bay rời mặt đất (HHMM)
+wheels_on,float64,0.0,1442,Thời điểm bánh máy bay chạm đường băng đến (HHMM)
+taxi_in,float64,0.0,7,Thời gian máy bay lăn từ đường băng vào cổng đón khách (phút)
+crs_arr_time,int64,0.0,1508,Giờ hạ cánh dự kiến theo lịch (HHMM)
+arr_time,float64,0.0,1449,Giờ hạ cánh thực tế (HHMM)
+arr_delay,float32,0.0,-19.0,"Độ trễ khi đến đích tính bằng phút (dương: trễ, âm: sớm)"
+cancelled,int64,0.0,0,Cờ đánh dấu chuyến bay bị hủy (Đã làm sạch: 100% bằng 0)
+cancellation_code,str,100.0,,Mã lý do hủy chuyến (Đã làm sạch: giá trị rỗng/None do đã lọc chuyến hủy)
+diverted,int64,0.0,0,Cờ đánh dấu chuyến bay bị chuyển hướng (Đã làm sạch: 100% bằng 0)
+crs_elapsed_time,float32,0.0,136.0,Tổng thời gian hành trình dự kiến từ cổng đi đến cổng đến (phút)
+actual_elapsed_time,float64,0.0,122,Tổng thời gian hành trình thực tế (phút)
+air_time,float64,0.0,84,"Thời gian bay thực tế trên không (từ wheels_off đến wheels_on, phút)"
+distance,float32,0.0,509.0,Khoảng cách giữa hai sân bay (dặm - miles)
+carrier_delay,float32,0.0,0.0,"Số phút trễ do lỗi hãng hàng không (bảo trì, phi hành đoàn,...)"
+weather_delay,float32,0.0,0.0,Số phút trễ do điều kiện thời tiết khắc nghiệt
+nas_delay,float32,0.0,0.0,"Số phút trễ do hệ thống không phận quốc gia (lưu lượng đông, kiểm soát không lưu,...)"
+security_delay,float32,0.0,0.0,"Số phút trễ do sự cố an ninh (sơ tán, kiểm tra an ninh lại,...)"
+late_aircraft_delay,float32,0.0,0.0,Số phút trễ dây chuyền do máy bay từ chặng trước đến muộn
+is_delayed,int8,0.0,0,"Cờ đánh dấu chuyến bay trễ chính thức (1: trễ >= 15 phút, 0: đúng giờ)"
+delay_cause_code,int8,0.0,0,"Mã định danh nguyên nhân trễ chính (0: OnTime, 1: Carrier, 2: Weather, 3: NAS, 4: Security, 5: LateAircraft)"
+delay_cause,str,0.0,OnTime_or_MinorDelay,"Tên nhãn nguyên nhân trễ chính (OnTime_or_MinorDelay, Carrier, Weather, NAS, Security, LateAircraft)"
+dep_hour,int8,0.0,12,Giờ cất cánh dự kiến trích xuất từ crs_dep_time (0 - 23)
+arr_hour,int8,0.0,15,Giờ hạ cánh dự kiến trích xuất từ crs_arr_time (0 - 23)
+dep_time_of_day,str,0.0,Afternoon,"Khung giờ cất cánh trong ngày (Morning: 5-11h, Afternoon: 12-16h, Evening: 17-21h, Night: 22-4h)"
+month,category,0.0,1,"Tháng trong năm (1 - 12, phân vùng Parquet)"

@@ -8,25 +8,28 @@
 
 ## 1. TRẠNG THÁI HIỆN TẠI (CURRENT STATE)
 
-* **Cập nhật lần cuối:** `2026-09-23 16:12:00 (GMT+7)`
-* **Giai đoạn hiện tại:** **Hoàn Tất Huấn Luyện Lại Toàn Bộ 7 Mô Hình Trên 100% Dữ Liệu 7 Triệu Dòng (Đảm Bảo Đối Chứng Công Bằng 1-to-1 Tuyệt Đối)**
+* **Cập nhật lần cuối:** `2026-09-30 16:36:00 (GMT+7)`
+* **Giai đoạn hiện tại:** **Hoàn Tất Tiền Xử Lý Phân Khúc & Huấn Luyện 100% 7 Triệu Dòng Trên CPU & GPU NVIDIA RTX 5050 (Phân Chia Phương Án B 70/15/15)**
 * **Trạng thái công việc:** 
-  1. **Loại bỏ hoàn toàn cơ chế lấy mẫu 300k dòng:** Huấn luyện trực tiếp 6 mô hình Hướng Thuần (CPU/SOTA) trên toàn bộ 5,572,213 dòng Train (từ 6,965,267 dòng sạch), không còn tình trạng so sánh khập khiễng 300k vs 7M.
-  2. **Kết quả đo đạc thực tế trên 100% 7 triệu dòng:**
-     - Cả 7 mô hình đều đạt độ chính xác ~79.2% và Weighted F1 ~70.2%.
-     - **Đối chứng Random Forest CPU vs Spark RF (cùng 50 cây, độ sâu 10, trên 7M dòng):**
-       + Spark MLlib: 49.89s (Nhanh hơn gấp **2.8 lần** so với Scikit-Learn CPU 139.71s).
-       + Spark MLlib: RAM đỉnh 1,012.2 MB (Tiết kiệm hơn so với Scikit-Learn CPU 1,285.0 MB).
-  3. **Ghi đè và xuất mới toàn bộ hệ thống số liệu & biểu đồ khoa học:**
-     - Ghi đè `results/metrics/grand_model_comparison_7m.csv` và `results/metrics/baseline_summary_7m.json`.
-     - Xuất mới 11 biểu đồ ghép trong `results/figures/combined/` và 13 biểu đồ riêng trong `results/figures/individual/`.
+  1. **Nâng cấp Tiền xử lý theo đối sánh `nhanh_khac`:** Tích hợp đặc trưng thời gian (`dep_min_of_day`, `arr_min_of_day` kiểu `int16`) và streaming chunking (500k/chunk) đọc trực tiếp 7,079,081 dòng CSV, xuất ra 6,965,267 dòng Parquet phân vùng 12 tháng (kích thước 228.39 MB, nén 81.70%, thời gian: 65.42s, Peak RAM: 660.04 MB).
+  2. **Huấn luyện 100% dữ liệu theo Phương án B (Train 70% = 4,875,686, Val 15% = 1,044,790, Test 15% = 1,044,791):**
+     - Ma trận đặc trưng $X$ nạp vào RAM chỉ mất 345.4 MB (`float32`), đọc trong 0.39s.
+     - **Tăng tốc GPU CUDA (NVIDIA GeForce RTX 5050):**
+       + **XGBoost (GPU):** 19.27s (Nhanh hơn gấp **5.5 lần** so với Random Forest CPU 106.79s).
+       + **CatBoost (GPU):** 19.60s, dẫn đầu chất lượng dự báo với **Weighted F1 70.83%** và **Macro F1 16.54%**.
+     - **Mô hình CPU:** Logistic Regression (17.99s), Decision Tree (51.12s), Random Forest CPU 8 threads (106.79s), LightGBM CPU 16 threads (78.93s).
+     - **RAM tiêu thụ tối đa (Peak RAM):** 1.41 GB - 1.91 GB (hoàn toàn an toàn trong RAM khả dụng ~6.4 GB).
+  3. **Tài liệu & Ấn phẩm hoàn tất:**
+     - Tạo báo cáo chuyên sâu [`doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md).
+     - Ghi đè bộ số liệu [`results/metrics/grand_model_comparison_7m.csv`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/results/metrics/grand_model_comparison_7m.csv) và [`results/metrics/baseline_summary_7m.json`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/results/metrics/baseline_summary_7m.json).
+     - Tái sinh toàn bộ 11 biểu đồ ghép trong `results/figures/combined/` và 13 biểu đồ riêng trong `results/figures/individual/`.
      - Cập nhật các mô hình `.joblib` mới trong `models/baseline/`.
 
 ### 1.1. Việc vừa hoàn thành (Just Completed)
-* [x] Viết và kiểm thử thành công khả năng huấn luyện thuần trên 100% dữ liệu 7 triệu dòng bằng `np.float32`.
-* [x] Cập nhật [`src/baseline/train_all_7m.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/baseline/train_all_7m.py) loại bỏ hoàn toàn lấy mẫu 300k dòng.
-* [x] Huấn luyện thành công toàn bộ 6 mô hình CPU/SOTA trên 5.57M dòng Train và đánh giá trên 1.39M dòng Test.
-* [x] Ghi đè toàn bộ bảng metrics CSV/JSON và tái tạo toàn bộ 24 biểu đồ khoa học chất lượng cao.
+* [x] Tích hợp cải tiến tiền xử lý trích xuất phút trong ngày (`dep_min_of_day`, `arr_min_of_day`) vào `clean_data.py`, `pipeline.py`, `train_all_7m.py`.
+* [x] Thực thi ETL Streaming Chunking trên 7,079,081 dòng thô, tạo `cleaned_flight_data_2024.parquet` (6,965,267 dòng sạch).
+* [x] Huấn luyện thành công 100% 6 mô hình Baseline trên CPU Ryzen 7 và GPU RTX 5050 với phân chia Phương án B (Train 4.87M, Val 1.04M, Test 1.04M).
+* [x] Xuất bản báo cáo thực nghiệm [`doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md) và liên kết vào `doc/README.md`.
 
 ### 1.2. Việc đang tiến hành (In Progress)
 * [ ] Kiểm tra hiển thị Web Dashboard và đồng bộ lên Git.
@@ -39,6 +42,7 @@
 
 | Thời gian | Tác nhân (AI/Dev) | Nội dung công việc đã hoàn thành | Tệp tin tạo mới / Chỉnh sửa | Ghi chú & Đánh giá |
 | :--- | :--- | :--- | :--- | :--- |
+| `2026-09-30 16:36` | Antigravity AI | Tiếp thu cải tiến từ `nhanh_khac` (thêm `dep_min_of_day`, `arr_min_of_day`), chạy ETL Streaming Chunking trên 7,079,081 dòng CSV (65.42s, Peak RAM 660MB); Huấn luyện thành công 100% 6.96M dòng theo Phương án B (Train 70% / Val 15% / Test 15%) tận dụng GPU NVIDIA RTX 5050 (XGBoost 19.27s, CatBoost 19.60s) và CPU Ryzen 7; Xuất bản báo cáo chi tiết doc/13 | `src/etl/clean_data.py`<br>`src/spark_ml/pipeline.py`<br>`src/baseline/train_all_7m.py`<br>`doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md`<br>`doc/README.md`<br>`results/metrics/*`<br>`results/figures/*` | Hoàn thành xuất sắc 100% mục tiêu; GPU tăng tốc gấp 5.5 lần so với RF CPU; RAM tối đa 1.91 GB an toàn tuyệt đối |
 | `2026-09-23 16:12` | Antigravity AI | Tiếp thu phản biện của người dùng về việc so sánh 300k vs 7M là không công bằng; tối ưu hóa ma trận đặc trưng float32 (292MB) và huấn luyện lại thành công 100% 6 mô hình CPU/SOTA trên 5.57M dòng Train; ghi đè toàn bộ kết quả CSV, JSON, models và 24 biểu đồ khoa học | `src/baseline/train_all_7m.py`<br>`results/metrics/*`<br>`results/figures/*`<br>`models/baseline/*`<br>`doc/05_WORKLOG_AND_HANDOVER.md` | Hoàn thành xuất sắc 100% mục tiêu; minh chứng thuyết phục Spark RF (49.89s) nhanh hơn gấp 2.8 lần so với RF CPU (139.71s) trên cùng 7 triệu dòng |
 * [x] Nâng cấp [`src/utils/visualize_results.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/utils/visualize_results.py): Bổ sung đầy đủ các hàm vẽ Radar Chart, Bubble Plot, Grouped Bar, Horizontal Bar, Latency Bar, Peak RAM Bar.
 * [x] Viết và thực thi [`src/baseline/train_all_7m.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/baseline/train_all_7m.py): Hoàn tất huấn luyện 6 mô hình CPU/SOTA, ghép Spark RF 7M, xuất đầy đủ CSV/JSON và 24 tệp ảnh đồ thị chất lượng cao.

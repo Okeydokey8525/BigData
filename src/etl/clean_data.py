@@ -55,6 +55,10 @@ DTYPE_OPTIMIZED = {
     'dest': 'category',
     'crs_dep_time': 'int16',
     'crs_arr_time': 'int16',
+    'dep_hour': 'int8',
+    'arr_hour': 'int8',
+    'dep_min_of_day': 'int16',
+    'arr_min_of_day': 'int16',
     'cancelled': 'int8',
     'diverted': 'int8',
     'crs_elapsed_time': 'float32',
@@ -104,12 +108,18 @@ def determine_delay_cause(row):
     return dominant_cause
 
 def add_time_features(df):
-    """Trích xuất đặc trưng giờ và khung giờ từ crs_dep_time và crs_arr_time."""
+    """Trích xuất đặc trưng giờ, khung giờ và số phút trong ngày từ crs_dep_time và crs_arr_time."""
     dep_hour = (df['crs_dep_time'] // 100).clip(0, 23).astype(np.int8)
     arr_hour = (df['crs_arr_time'] // 100).clip(0, 23).astype(np.int8)
     
     df['dep_hour'] = dep_hour
     df['arr_hour'] = arr_hour
+    
+    # Kế thừa cải tiến từ nhanh_khac: Chuyển HHMM sang số phút liên tục trong ngày [0, 1439]
+    dep_min = ((df['crs_dep_time'] // 100) * 60 + (df['crs_dep_time'] % 100)).clip(0, 1439).astype(np.int16)
+    arr_min = ((df['crs_arr_time'] // 100) * 60 + (df['crs_arr_time'] % 100)).clip(0, 1439).astype(np.int16)
+    df['dep_min_of_day'] = dep_min
+    df['arr_min_of_day'] = arr_min
     
     conditions = [
         (dep_hour >= 5) & (dep_hour < 12),
@@ -119,6 +129,7 @@ def add_time_features(df):
     choices = ['Morning', 'Afternoon', 'Evening']
     df['dep_time_of_day'] = np.select(conditions, choices, default='Night')
     return df
+
 
 def clean_flight_data(df, drop_cancelled_diverted=True, verbose=True):
     """Quy trình làm sạch dữ liệu toàn diện với NumPy Vectorization."""
@@ -163,9 +174,13 @@ def clean_flight_data(df, drop_cancelled_diverted=True, verbose=True):
     for col in ['crs_elapsed_time', 'distance', 'arr_delay']:
         if col in df.columns:
             df[col] = df[col].astype(np.float32)
+    for col in ['dep_min_of_day', 'arr_min_of_day']:
+        if col in df.columns:
+            df[col] = df[col].astype(np.int16)
     for col in ['op_unique_carrier', 'origin', 'dest', 'dep_time_of_day']:
         if col in df.columns:
             df[col] = df[col].astype('category')
+
             
     if verbose:
         print("\n--- PHÂN BỐ NGUYÊN NHÂN TRỄ ---")

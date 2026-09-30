@@ -70,8 +70,10 @@ from src.utils.visualize_results import (
 
 FEATURE_COLUMNS_NUM = [
     'month', 'day_of_month', 'day_of_week',
-    'dep_hour', 'arr_hour', 'crs_elapsed_time', 'distance'
+    'dep_hour', 'arr_hour', 'dep_min_of_day', 'arr_min_of_day',
+    'crs_elapsed_time', 'distance'
 ]
+
 
 FEATURE_COLUMNS_CAT = [
     'op_unique_carrier', 'origin', 'dest', 'dep_time_of_day'
@@ -139,15 +141,21 @@ def run_training_pipeline():
     print(f"[✓] Ma trận đặc trưng X: {X.shape}, kích thước RAM: {X.nbytes / (1024*1024):.1f} MB")
     print(f"    RAM tiến trình sau khi gom rác: {get_memory_usage_mb():.1f} MB")
 
-    # Chia tập Train/Test theo tỷ lệ 80/20 có phân tầng
-    print("[*] Phân tách tập Train (80%) và Test (20%) có phân tầng nhãn...")
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, random_state=42, stratify=y
+    # Chia tập dữ liệu theo Phương án B (Train 70%, Validation 15%, Test 15%) có phân tầng nhãn
+    print("[*] Phân tách tập dữ liệu theo Phương án B: Train (70%), Validation (15%), Test (15%) có phân tầng...")
+    X_train, X_temp, y_train, y_temp = train_test_split(
+        X, y, test_size=0.30, random_state=42, stratify=y
     )
-    del X, y
+    X_val, X_test, y_val, y_test = train_test_split(
+        X_temp, y_temp, test_size=0.50, random_state=42, stratify=y_temp
+    )
+    del X, y, X_temp, y_temp
     gc.collect()
-    print(f"[✓] Tập Huấn luyện (Train): {len(X_train):,} dòng | Tập Đánh giá (Test): {len(X_test):,} dòng")
-    print(f"    RAM tiến trình: {get_memory_usage_mb():.1f} MB")
+
+    print(f"[✓] Tập Huấn luyện (Train) : {len(X_train):,} dòng ({len(X_train)/total_clean_rows*100:.1f}%)")
+    print(f"[✓] Tập Xác thực (Val)    : {len(X_val):,} dòng ({len(X_val)/total_clean_rows*100:.1f}%)")
+    print(f"[✓] Tập Kiểm thử (Test)    : {len(X_test):,} dòng ({len(X_test)/total_clean_rows*100:.1f}%)")
+    print(f"    RAM tiến trình sau khi chia tập: {get_memory_usage_mb():.1f} MB")
 
     # Thư mục lưu kết quả
     models_dir = "models/baseline"
@@ -168,8 +176,8 @@ def run_training_pipeline():
         "models": [
             {"id": "random_forest_cpu", "name": "Random Forest (Scikit-Learn CPU)"},
             {"id": "lightgbm", "name": "LightGBM (Microsoft)"},
-            {"id": "xgboost", "name": "XGBoost (DMLC)"},
-            {"id": "catboost", "name": "CatBoost (Yandex)"},
+            {"id": "xgboost", "name": "XGBoost (DMLC GPU/CPU)"},
+            {"id": "catboost", "name": "CatBoost (Yandex GPU/CPU)"},
             {"id": "decision_tree", "name": "Decision Tree"},
             {"id": "logistic_regression", "name": "Logistic Regression"}
         ],
@@ -187,43 +195,49 @@ def run_training_pipeline():
         title="Phân Bố 6 Nguyên Nhân Trễ Chuyến Bay Thương Mại (7 Triệu Chuyến Bay - 2024)"
     )
 
-    # Cấu hình 6 mô hình CPU / SOTA tối ưu cho huấn luyện trên 5.57M dòng
+    # Cấu hình 6 mô hình CPU / GPU SOTA tối ưu cho huấn luyện trên 4.87M dòng Train + 1.04M dòng Val
     models_config = [
         {
             "name": "Logistic Regression",
-            "model": SGDClassifier(loss='log_loss', max_iter=50, random_state=42, n_jobs=4),
+            "model": SGDClassifier(loss='log_loss', max_iter=50, random_state=42, n_jobs=8),
             "use_scaled": True,
-            "is_tree": False
+            "is_tree": False,
+            "has_early_stopping": False
         },
         {
             "name": "Decision Tree",
-            "model": DecisionTreeClassifier(max_depth=10, random_state=42),
+            "model": DecisionTreeClassifier(max_depth=12, min_samples_split=50, random_state=42),
             "use_scaled": False,
-            "is_tree": True
+            "is_tree": True,
+            "has_early_stopping": False
         },
         {
             "name": "Random Forest (CPU)",
-            "model": RandomForestClassifier(n_estimators=50, max_depth=10, n_jobs=4, random_state=42),
+            "model": RandomForestClassifier(n_estimators=50, max_depth=10, n_jobs=8, random_state=42),
             "use_scaled": False,
-            "is_tree": True
+            "is_tree": True,
+            "has_early_stopping": False
         },
         {
             "name": "LightGBM",
-            "model": lgb.LGBMClassifier(n_estimators=50, max_depth=10, learning_rate=0.1, random_state=42, verbose=-1, n_jobs=4),
+            "model": lgb.LGBMClassifier(n_estimators=100, max_depth=10, learning_rate=0.08, random_state=42, verbose=-1, n_jobs=8),
             "use_scaled": False,
-            "is_tree": True
+            "is_tree": True,
+            "has_early_stopping": True
         },
         {
             "name": "XGBoost",
-            "model": xgb.XGBClassifier(tree_method='hist', n_estimators=50, max_depth=8, learning_rate=0.1, random_state=42, eval_metric='mlogloss', n_jobs=4),
+            "model": xgb.XGBClassifier(device='cuda', tree_method='hist', n_estimators=100, max_depth=8, learning_rate=0.08, random_state=42, eval_metric='mlogloss', early_stopping_rounds=15),
             "use_scaled": False,
-            "is_tree": True
+            "is_tree": True,
+            "has_early_stopping": True
         },
         {
             "name": "CatBoost",
-            "model": CatBoostClassifier(iterations=50, depth=8, thread_count=4, verbose=0, random_state=42),
+            "model": CatBoostClassifier(iterations=100, depth=8, task_type='GPU', early_stopping_rounds=20, verbose=0, random_state=42),
             "use_scaled": False,
-            "is_tree": True
+            "is_tree": True,
+            "has_early_stopping": True
         }
     ]
 
@@ -234,12 +248,14 @@ def run_training_pipeline():
     X_lat_test = X_test[:1000]
 
     print("\n" + "-" * 80)
-    print(f" BẮT ĐẦU HUẤN LUYỆN 6 MÔ HÌNH CPU / SOTA TRÊN TOÀN BỘ {len(X_train):,} DÒNG")
+    print(f" BẮT ĐẦU HUẤN LUYỆN 6 MÔ HÌNH CPU / GPU TRÊN TOÀN BỘ {len(X_train):,} DÒNG TRAIN")
+    print(f" (Tập Validation: {len(X_val):,} dòng để Early Stopping | Tập Test: {len(X_test):,} dòng)")
     print("-" * 80)
 
     # Chuẩn bị trước scaler nếu cần
     scaler = StandardScaler()
     X_train_scaled = None
+    X_val_scaled = None
     X_test_scaled = None
     X_lat_scaled = None
 
@@ -248,26 +264,52 @@ def run_training_pipeline():
         clf = cfg["model"]
         use_scaled = cfg["use_scaled"]
         is_tree = cfg["is_tree"]
+        has_es = cfg.get("has_early_stopping", False)
 
         print(f"\n---> [Đang huấn luyện] {m_name} trên {len(X_train):,} dòng...")
         if use_scaled:
             if X_train_scaled is None:
                 print("     [*] Đang chuẩn hóa dữ liệu cho Logistic Regression...")
                 X_train_scaled = scaler.fit_transform(X_train).astype(np.float32)
+                X_val_scaled = scaler.transform(X_val).astype(np.float32)
                 X_test_scaled = scaler.transform(X_test).astype(np.float32)
                 X_lat_scaled = X_test_scaled[:1000]
                 joblib.dump(scaler, os.path.join(models_dir, "scaler.joblib"))
             cur_X_train = X_train_scaled
+            cur_X_val = X_val_scaled
             cur_X_test = X_test_scaled
             cur_X_lat = X_lat_scaled
         else:
             cur_X_train = X_train
+            cur_X_val = X_val
             cur_X_test = X_test
             cur_X_lat = X_lat_test
 
         ram_before = get_memory_usage_mb()
         t0 = time.time()
-        clf.fit(cur_X_train, y_train)
+
+        # Huấn luyện với cơ chế Early Stopping nếu mô hình hỗ trợ
+        if m_name == "LightGBM":
+            clf.fit(
+                cur_X_train, y_train,
+                eval_set=[(cur_X_val, y_val)],
+                callbacks=[lgb.early_stopping(stopping_rounds=15, verbose=False)]
+            )
+        elif m_name == "XGBoost":
+            clf.fit(
+                cur_X_train, y_train,
+                eval_set=[(cur_X_val, y_val)],
+                verbose=False
+            )
+        elif m_name == "CatBoost":
+            clf.fit(
+                cur_X_train, y_train,
+                eval_set=(cur_X_val, y_val),
+                verbose=False
+            )
+        else:
+            clf.fit(cur_X_train, y_train)
+
         train_time = time.time() - t0
         ram_after = get_memory_usage_mb()
         peak_ram = max(ram_before, ram_after)
@@ -276,6 +318,7 @@ def run_training_pipeline():
         t_lat_start = time.time()
         _ = clf.predict(cur_X_lat)
         latency_ms = (time.time() - t_lat_start) * 1000
+
 
         # Đánh giá toàn bộ trên 1.39 triệu dòng test
         print(f"     [*] Đang đánh giá trên {len(cur_X_test):,} dòng test...")

@@ -64,6 +64,10 @@ Các AI Agent khi tham gia dự án cần tra cứu các file chi tiết tương
 8. [`08_HARDWARE_AND_ENVIRONMENT_SPECS.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/08_HARDWARE_AND_ENVIRONMENT_SPECS.md): Đo đạc phần cứng máy tính cục bộ thực tế và so sánh với Kaggle Cloud 2x T4.
 9. [`09_DUAL_APPROACH_PLAN.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/09_DUAL_APPROACH_PLAN.md): Phương pháp luận giải trình 2 hướng: Hướng Thuần (CPU/GPU) vs Hướng Spark.
 10. [`10_MASTER_EXECUTION_PLAN.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/10_MASTER_EXECUTION_PLAN.md): Lộ trình hành động tổng thể từ lúc nạp dataset đến khi nghiệm thu đồ án.
+11. [`11_Chay_Full_7m_DecisionTree_CatBoost_Ensemble.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/11_Chay_Full_7m_DecisionTree_CatBoost_Ensemble.md): Hướng dẫn và báo cáo huấn luyện 7 triệu dòng.
+12. [`12_SO_SANH_TIEN_XU_LY_DOAN_VA_NHANH_KHAC.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/12_SO_SANH_TIEN_XU_LY_DOAN_VA_NHANH_KHAC.md): **[BÁO CÁO ĐỐI SÁNH]** Phân tích chi tiết sự khác biệt về tiền xử lý dữ liệu giữa folder `DoAn` và `nhanh_khac`.
+13. [`13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md): **[BÁO CÁO THỰC NGHIỆM 7M]** Kết quả huấn luyện 100% dữ liệu (6.96M dòng) cho 6 mô hình CPU & GPU NVIDIA RTX 5050 và đối sánh Spark RF.
+
 
 
 ---

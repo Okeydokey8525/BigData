@@ -316,7 +316,11 @@ def main():
         
     print(f"[*] Tổng số dòng dữ liệu trong Spark: {df.count():,}")
     
-    num_cols = ['month', 'day_of_month', 'day_of_week', 'dep_hour', 'arr_hour', 'crs_elapsed_time', 'distance']
+    num_cols = [
+        'month', 'day_of_month', 'day_of_week',
+        'dep_hour', 'arr_hour', 'dep_min_of_day', 'arr_min_of_day',
+        'crs_elapsed_time', 'distance'
+    ]
     cat_cols = ['op_unique_carrier', 'origin', 'dest', 'dep_time_of_day']
     
     # Chuẩn bị pipeline đặc trưng

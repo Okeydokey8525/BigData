@@ -3,49 +3,49 @@
         "accuracy": 79.18,
         "weighted_f1": 69.98,
         "macro_f1": 14.73,
-        "train_time_sec": 22.62,
-        "latency_ms_per_1k": 7.28,
-        "peak_ram_mb": 1529.4
+        "train_time_sec": 17.99,
+        "latency_ms_per_1k": 40.0,
+        "peak_ram_mb": 1710.4
     },
     "Decision Tree": {
         "accuracy": 79.19,
-        "weighted_f1": 70.22,
-        "macro_f1": 15.2,
-        "train_time_sec": 26.33,
-        "latency_ms_per_1k": 1.22,
-        "peak_ram_mb": 1247.6
+        "weighted_f1": 70.45,
+        "macro_f1": 15.72,
+        "train_time_sec": 51.12,
+        "latency_ms_per_1k": 0.67,
+        "peak_ram_mb": 1418.5
     },
     "Random Forest (CPU)": {
         "accuracy": 79.18,
         "weighted_f1": 69.98,
         "macro_f1": 14.73,
-        "train_time_sec": 139.71,
-        "latency_ms_per_1k": 15.03,
-        "peak_ram_mb": 1285.0
+        "train_time_sec": 106.79,
+        "latency_ms_per_1k": 33.51,
+        "peak_ram_mb": 1417.9
     },
     "LightGBM": {
-        "accuracy": 79.22,
-        "weighted_f1": 70.18,
-        "macro_f1": 15.36,
-        "train_time_sec": 42.76,
-        "latency_ms_per_1k": 5.75,
-        "peak_ram_mb": 1327.2
+        "accuracy": 79.25,
+        "weighted_f1": 70.34,
+        "macro_f1": 15.94,
+        "train_time_sec": 78.93,
+        "latency_ms_per_1k": 11.71,
+        "peak_ram_mb": 1464.8
     },
     "XGBoost": {
-        "accuracy": 79.21,
-        "weighted_f1": 70.08,
-        "macro_f1": 15.05,
-        "train_time_sec": 98.63,
-        "latency_ms_per_1k": 5.26,
-        "peak_ram_mb": 1529.1
+        "accuracy": 79.27,
+        "weighted_f1": 70.36,
+        "macro_f1": 15.55,
+        "train_time_sec": 19.27,
+        "latency_ms_per_1k": 73.52,
+        "peak_ram_mb": 1742.0
     },
     "CatBoost": {
-        "accuracy": 79.23,
-        "weighted_f1": 70.47,
-        "macro_f1": 15.77,
-        "train_time_sec": 194.05,
-        "latency_ms_per_1k": 7.55,
-        "peak_ram_mb": 3727.0
+        "accuracy": 79.29,
+        "weighted_f1": 70.83,
+        "macro_f1": 16.54,
+        "train_time_sec": 19.6,
+        "latency_ms_per_1k": 12.03,
+        "peak_ram_mb": 1908.6
     },
     "Random Forest (Spark MLlib)": {
         "accuracy": 78.88,
