@@ -136,20 +136,49 @@ def convert_csv_to_parquet_stream(input_csv, output_parquet_dir, partition_col="
         "elapsed_sec": round(total_elapsed, 2)
     }
 
-def convert_csv_to_parquet(input_csv, output_parquet_dir, partition_col="month", chunksize=500_000, stream=False):
-    """Điều phối chuyển đổi CSV sang Parquet (In-Memory hoặc Streaming)."""
-    raw_size_bytes = os.path.getsize(input_csv) if os.path.exists(input_csv) else 0
-    # Nếu file > 50 MB hoặc có cờ stream -> dùng streaming chunking
-    if stream or raw_size_bytes > 50 * (1024**2):
-        return convert_csv_to_parquet_stream(input_csv, output_parquet_dir, partition_col, chunksize=chunksize)
-        
-    print("="*60)
-    print(" BẮT ĐẦU CHUYỂN ĐỔI SANG ĐỊNH DẠNG PARQUET (IN-MEMORY)")
-    print("="*60)
-    start_time = time.perf_counter()
-    df = pd.read_csv(input_csv)
-    cleaned_df = clean_flight_data(df)
+def convert_csv_to_parquet_all_at_once(input_csv, output_parquet_dir, partition_col="month"):
+    """Nạp 1 lần toàn bộ tệp CSV vào RAM và tiền xử lý trực tiếp In-Memory (theo yêu cầu của GVHD)."""
+    print("="*65)
+    print(" BẮT ĐẦU NẠP 1 LẦN TOÀN BỘ CSV VÀO RAM (ALL-AT-ONCE IN-MEMORY)")
+    print("="*65)
+    print(f" • Tệp CSV đầu vào : {input_csv}")
+    print(f" • Thư mục Parquet : {output_parquet_dir}")
+    print(f" • Cột phân vùng   : {partition_col}")
     
+    raw_size_bytes = os.path.getsize(input_csv) if os.path.exists(input_csv) else 0
+    print(f" • Dung lượng CSV thô: {raw_size_bytes / (1024**2):.2f} MB")
+    
+    process = psutil.Process()
+    start_time = time.perf_counter()
+    peak_ram_bytes = 0
+    
+    def record_peak_ram():
+        nonlocal peak_ram_bytes
+        c_ram = process.memory_info().rss
+        if c_ram > peak_ram_bytes:
+            peak_ram_bytes = c_ram
+        return c_ram
+
+    record_peak_ram()
+    
+    # 1. Nạp toàn bộ 1 lần
+    t0_read = time.perf_counter()
+    print("[*] [1/3] Đang nạp toàn bộ CSV vào một DataFrame duy nhất...")
+    df = pd.read_csv(input_csv, low_memory=False)
+    t_read = time.perf_counter() - t0_read
+    record_peak_ram()
+    print(f"[✓] Nạp thành công {len(df):,} dòng trong {t_read:.2f}s. RAM hiện tại: {record_peak_ram() / (1024**2):.1f} MB")
+    
+    # 2. Tiền xử lý in-memory
+    t0_clean = time.perf_counter()
+    print("[*] [2/3] Đang thực thi tiền xử lý trực tiếp trong RAM (Vectorized)...")
+    cleaned_df = clean_flight_data(df, verbose=True)
+    t_clean = time.perf_counter() - t0_clean
+    record_peak_ram()
+    print(f"[✓] Tiền xử lý xong {len(cleaned_df):,} dòng trong {t_clean:.2f}s. RAM hiện tại: {record_peak_ram() / (1024**2):.1f} MB")
+    
+    # 3. Ghi Parquet phân vùng
+    t0_write = time.perf_counter()
     if os.path.exists(output_parquet_dir):
         shutil.rmtree(output_parquet_dir)
     os.makedirs(output_parquet_dir, exist_ok=True)
@@ -157,6 +186,7 @@ def convert_csv_to_parquet(input_csv, output_parquet_dir, partition_col="month",
     for c in cleaned_df.select_dtypes(include=['category']).columns:
         cleaned_df[c] = cleaned_df[c].astype(str)
         
+    print(f"[*] [3/3] Đang lưu định dạng Parquet phân vùng theo '{partition_col}'...")
     table = pa.Table.from_pandas(cleaned_df, preserve_index=False)
     ds.write_dataset(
         data=table,
@@ -166,32 +196,60 @@ def convert_csv_to_parquet(input_csv, output_parquet_dir, partition_col="month",
         partitioning_flavor="hive",
         existing_data_behavior="overwrite_or_ignore"
     )
+    t_write = time.perf_counter() - t0_write
+    record_peak_ram()
     
-    elapsed = time.perf_counter() - start_time
+    total_elapsed = time.perf_counter() - start_time
     parquet_size_bytes = get_directory_size(output_parquet_dir)
     reduction_pct = (1 - (parquet_size_bytes / raw_size_bytes)) * 100 if raw_size_bytes > 0 else 0
+    throughput = len(df) / total_elapsed if total_elapsed > 0 else 0
     
-    print("\n" + "="*60)
-    print(" KẾT QUẢ TỐI ƯU HÓA ĐỊNH DẠNG DỮ LIỆU")
-    print("="*60)
-    print(f" • Dung lượng CSV ban đầu   : {raw_size_bytes / (1024**2):.2f} MB")
+    print("\n" + "="*65)
+    print(" KẾT QUẢ ĐO ĐẠC NẠP 1 LẦN (ALL-AT-ONCE IN-MEMORY)")
+    print("="*65)
+    print(f" • Số dòng CSV thô           : {len(df):,} dòng")
+    print(f" • Số dòng sạch sau xử lý    : {len(cleaned_df):,} dòng")
+    print(f" • Dung lượng CSV thô        : {raw_size_bytes / (1024**2):.2f} MB")
     print(f" • Dung lượng Parquet sau nén: {parquet_size_bytes / (1024**2):.2f} MB")
-    print(f" • Tỷ lệ giảm dung lượng     : {reduction_pct:.2f}%")
-    print(f" • Tổng thời gian thực thi   : {elapsed:.2f} giây")
-    print("="*60 + "\n")
+    print(f" • Tỷ lệ nén giảm dung lượng : {reduction_pct:.2f}%")
+    print(f" • Thời gian nạp CSV         : {t_read:.2f} s")
+    print(f" • Thời gian tiền xử lý      : {t_clean:.2f} s")
+    print(f" • Thời gian ghi Parquet     : {t_write:.2f} s")
+    print(f" • TỔNG THỜI GIAN THỰC THI   : {total_elapsed:.2f} s (~{total_elapsed/60:.2f} phút)")
+    print(f" • ĐỈNH RAM TIÊU THỤ (Peak)  : {peak_ram_bytes / (1024**2):.1f} MB (~{peak_ram_bytes / (1024**3):.2f} GB)")
+    print(f" • Tốc độ xử lý (Throughput) : {throughput:,.0f} dòng/giây")
+    print("="*65 + "\n")
+    
+    return {
+        "mode": "all-at-once",
+        "total_raw_rows": len(df),
+        "total_cleaned_rows": len(cleaned_df),
+        "raw_size_mb": round(raw_size_bytes / (1024**2), 2),
+        "parquet_size_mb": round(parquet_size_bytes / (1024**2), 2),
+        "reduction_pct": round(reduction_pct, 2),
+        "peak_ram_mb": round(peak_ram_bytes / (1024**2), 2),
+        "elapsed_sec": round(total_elapsed, 2)
+    }
+
+def convert_csv_to_parquet(input_csv, output_parquet_dir, partition_col="month", chunksize=500_000, stream=False):
+    """Điều phối chuyển đổi CSV sang Parquet (In-Memory hoặc Streaming)."""
+    if stream:
+        return convert_csv_to_parquet_stream(input_csv, output_parquet_dir, partition_col, chunksize=chunksize)
+    else:
+        return convert_csv_to_parquet_all_at_once(input_csv, output_parquet_dir, partition_col)
 
 def main():
-    parser = argparse.ArgumentParser(description="Chuyển đổi CSV sang Parquet phân vùng tối ưu RAM")
+    parser = argparse.ArgumentParser(description="Chuyển đổi CSV sang Parquet phân vùng (Hỗ trợ Nạp 1 lần & Streaming)")
     parser.add_argument(
         "--input",
         type=str,
-        default=r"Flight Delay Dataset — 2024/flight_data_2024_sample.csv",
+        default=r"Flight Delay Dataset — 2024/flight_data_2024.csv",
         help="Đường dẫn tệp CSV đầu vào"
     )
     parser.add_argument(
         "--output_dir",
         type=str,
-        default=r"Flight Delay Dataset — 2024/sample_parquet_partitioned",
+        default=r"Flight Delay Dataset — 2024/cleaned_flight_data_2024.parquet",
         help="Thư mục xuất tệp Parquet phân vùng"
     )
     parser.add_argument(
@@ -203,7 +261,7 @@ def main():
     parser.add_argument(
         "--stream",
         action="store_true",
-        help="Bắt buộc sử dụng chế độ Streaming Chunking"
+        help="Sử dụng chế độ Streaming Chunking (chia nhỏ mẩu). Mặc định nếu không bật là Nạp 1 lần (All-at-once)"
     )
     args = parser.parse_args()
     

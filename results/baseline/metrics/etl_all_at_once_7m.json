@@ -1,0 +1,17 @@
+{
+  "mode": "all-at-once-in-memory",
+  "timestamp": "2026-09-30 18:38:43",
+  "input_file": "Flight Delay Dataset — 2024/flight_data_2024.csv",
+  "input_rows": 7079081,
+  "input_size_mb": 1307.72,
+  "output_file": "Flight Delay Dataset — 2024/cleaned_flight_data_2024.parquet",
+  "output_rows": 6965267,
+  "filtered_rows_cancelled_diverted": 113814,
+  "read_csv_time_sec": 32.22,
+  "preprocessing_time_sec": 7.7,
+  "write_parquet_time_sec": 5.16,
+  "total_etl_time_sec": 45.09,
+  "peak_ram_mb": 4903.2,
+  "peak_ram_gb": 4.79,
+  "throughput_rows_per_sec": 156999
+}

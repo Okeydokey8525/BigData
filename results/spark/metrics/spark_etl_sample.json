@@ -1,0 +1,23 @@
+{
+    "execution_mode": "Spark Distributed ETL",
+    "spark_master": "local[*]",
+    "raw_csv_path": "C:\\LeDucLuong\\HK VII\\NhapMonBigData\\DoAn\\Flight Delay Dataset — 2024/flight_data_2024_sample.csv",
+    "output_parquet_path": "Flight Delay Dataset — 2024/cleaned_spark_sample.parquet",
+    "input_csv_size_mb": 1.77,
+    "output_parquet_size_mb": 0.84,
+    "compression_ratio": 2.1,
+    "total_raw_rows": 10000,
+    "total_cleaned_rows": 9836,
+    "filtered_rows_cancelled_diverted": 164,
+    "timings_seconds": {
+        "read_csv": 5.32,
+        "feature_engineering_and_cleaning": 3.76,
+        "write_parquet": 5.201,
+        "total_elapsed": 43.056
+    },
+    "throughput_rows_per_second": 232.3,
+    "ram_telemetry_mb": {
+        "initial_ram": 46.7,
+        "peak_python_driver_ram": 101.8
+    }
+}

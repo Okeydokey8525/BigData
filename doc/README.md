@@ -69,6 +69,9 @@ Các AI Agent khi tham gia dự án cần tra cứu các file chi tiết tương
 12. [`12_SO_SANH_TIEN_XU_LY_DOAN_VA_NHANH_KHAC.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/12_SO_SANH_TIEN_XU_LY_DOAN_VA_NHANH_KHAC.md): **[BÁO CÁO ĐỐI SÁNH]** Phân tích chi tiết sự khác biệt về tiền xử lý dữ liệu giữa folder `DoAn` và `nhanh_khac`.
 13. [`13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md): **[BÁO CÁO THỰC NGHIỆM 7M]** Kết quả huấn luyện 100% dữ liệu (6.96M dòng) cho 6 mô hình CPU & GPU NVIDIA RTX 5050 và đối sánh Spark RF.
 14. [`14_HUONG_DAN_TRIEN_KHAI_SPARK_CLUSTER_3_LAPTOP_TAILSCALE.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/14_HUONG_DAN_TRIEN_KHAI_SPARK_CLUSTER_3_LAPTOP_TAILSCALE.md): **[CẨM NANG CỤM 3 MÁY Ở NHÀ]** Hướng dẫn kết nối 3 laptop tại nhà riêng qua Tailscale Mesh VPN thành cụm Apache Spark phân tán thực thụ.
+15. [`15_BAO_CAO_TIEN_XU_LY_ALL_AT_ONCE_7M.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/15_BAO_CAO_TIEN_XU_LY_ALL_AT_ONCE_7M.md): **[BÁO CÁO NẠP 1 LẦN IN-MEMORY]** Chi tiết thực nghiệm nạp 1 lần 7.07M dòng theo ý Thầy (45.09s, RAM đỉnh 4.79 GB), giải mã tốc độ, phân tích nhiệt và bằng chứng số liệu.
+16. [`16_GIAI_DAP_THAC_MAC_BO_NHO_PHAN_CUNG_VA_TIEN_XU_LY.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/16_GIAI_DAP_THAC_MAC_BO_NHO_PHAN_CUNG_VA_TIEN_XU_LY.md): **[HỎI ĐÁP BỘ NHỚ & PHẦN CỨNG]** Giải mã chi tiết cơ chế Bit/Byte, sơ đồ dữ liệu, mức độ phụ thuộc phần cứng Lenovo LOQ, khả năng chạy trên máy bạn bè, giới hạn vật lý RAM và lý do bắt buộc chuyển sang cụm Spark 3 máy.
+
 
 
 

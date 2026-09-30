@@ -19,7 +19,7 @@ Sau khi hoàn thành nghiên cứu đối sánh tiền xử lý giữa hai thư 
 
 ## 2. ĐẶC TẢ PHẦN CỨNG VÀ MÔI TRƯỜNG THỰC NGHIỆM
 
-Thông số phần cứng đo đạc trực tiếp trên hệ thống máy Local (Laptop ASUS TUF Gaming):
+Thông số phần cứng đo đạc trực tiếp trên hệ thống máy Local (Laptop Lenovo LOQ 15AHP10 - Model 83JG):
 
 | Thành phần | Thông số kỹ thuật chi tiết | Vai trò trong thực nghiệm |
 | :--- | :--- | :--- |
