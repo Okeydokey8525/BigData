@@ -43,16 +43,18 @@
 ```text
 ├── .gitignore                          # Quy định loại trừ file lớn (>100MB) và môi trường ảo
 ├── README.md                           # Giới thiệu tổng quan dự án (File này)
+├── requirements.txt                    # Thư viện phụ thuộc của dự án
 ├── Nhom6_T4_C10-12_BaoCao.docx         # Đề cương đồ án học phần đã được duyệt
 ├── Flight Delay Dataset — 2024/        # Thư mục dữ liệu
 │   ├── flight_data_2024_data_dictionary.csv  # Từ điển dữ liệu (kèm cột nghĩa tiếng Việt)
 │   ├── flight_data_2024_sample.csv           # 10,000 dòng mẫu để kiểm thử nhanh
-│   └── flight_data_2024.csv                  # [Download từ Kaggle] 7.07M dòng (1.22 GB)
+│   ├── flight_data_2024.csv                  # [Download từ Kaggle] 7.07M dòng (1.22 GB)
+│   └── cleaned_flight_data_2024.parquet      # [Đã ETL] 6,965,267 dòng sạch phân vùng 12 tháng (228.4 MB)
 ├── Bao_Cao/                            # Báo cáo học phần chính thức, slide thuyết trình
 ├── doc/                                # Hệ tri thức dự án & Hướng dẫn kỹ thuật
 │   ├── 00_AI_READ_FIRST.md             # Điểm xuất phát điều hướng cho AI Agent
 │   ├── 01_DATASET_SPECIFICATION.md     # Đặc tả 35 cột dữ liệu & Target Labeling
-│   ├── 02_ARCHITECTURE_AND_TECHSTACK.md# Kiến trúc phân tán HDFS, Spark, Mongo, FastAPI, React
+│   ├── 02_ARCHITECTURE_AND_TECHSTACK.md# Kiến trúc phân tán HDFS, Spark, Mongo, FastAPI
 │   ├── 03_ROADMAP_AND_TASKS.md         # Kế hoạch 11 tuần bám sát đề cương
 │   ├── 04_AI_AGENT_GUIDELINES.md       # Quy tắc an toàn RAM (chống OOM) & Code convention
 │   ├── 05_WORKLOG_AND_HANDOVER.md      # Nhật ký làm việc & Bàn giao nhiệm vụ luân phiên
@@ -61,21 +63,51 @@
 │   ├── 08_HARDWARE_AND_ENVIRONMENT_SPECS.md    # Đo đạc thông số máy Local vs Kaggle Cloud
 │   ├── 09_DUAL_APPROACH_PLAN.md        # Giải trình 2 hướng Thuần vs Spark & Phân công nhóm
 │   ├── 10_MASTER_EXECUTION_PLAN.md     # Lộ trình hành động 6 giai đoạn chi tiết
+│   ├── 11_Chay_Full_7m_DecisionTree_CatBoost_Ensemble.md # Báo cáo huấn luyện 7M đầu tiên
+│   ├── 12_SO_SANH_TIEN_XU_LY_DOAN_VA_NHANH_KHAC.md       # Báo cáo đối sánh tiền xử lý
+│   ├── 13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md # Báo cáo thực nghiệm 7M CPU & GPU RTX 5050
+│   ├── 14_HUONG_DAN_TRIEN_KHAI_SPARK_CLUSTER_3_LAPTOP_TAILSCALE.md # Cẩm nang kết nối cụm Spark 3 laptop
 │   ├── README.md                       # Mục lục tài liệu nội bộ
 │   └── nguyen-tac-lam-viec-dai.md      # Quy tắc làm việc dài & Chuẩn mực AI
-├── src/                                # [Sắp triển khai] Mã nguồn ETL, Spark ML, Baseline
-├── docker/                             # [Sắp triển khai] Docker Compose cụm Hadoop, Spark, MongoDB
-├── backend/                            # [Sắp triển khai] FastAPI REST API
-└── dashboard/                          # [Sắp triển khai] React Frontend Dashboard
+├── src/                                # Mã nguồn đường ống Big Data
+│   ├── etl/                            # Kịch bản tiền xử lý Streaming Chunking & chuyển đổi Parquet
+│   ├── baseline/                       # Kịch bản huấn luyện 6 mô hình CPU/GPU (train_all_7m.py)
+│   ├── spark_ml/                       # Đường ống Apache Spark MLlib Random Forest phân tán
+│   ├── utils/                          # Bộ công cụ trực quan hóa sinh 24 biểu đồ khoa học
+│   └── serving/                        # REST API FastAPI phục vụ mô hình mẫu ban đầu
+├── models/                             # Trọng số mô hình đã huấn luyện hoàn chỉnh trên 7M dòng
+│   ├── baseline/                       # 6 models (.joblib) + scaler + encoders + metadata
+│   └── spark/                          # Mô hình Spark MLlib Random Forest phân tán
+├── results/                            # Kết quả thực nghiệm và biểu đồ khoa học
+│   └── baseline/                       # Số liệu CSV/JSON và 24 tệp ảnh PNG (combined & individual)
+└── Web_Air/                            # Ứng dụng Web Python Dashboard 3 Tab độc lập
+    ├── app.py                          # FastAPI Server xử lý 9 endpoints
+    ├── config.py                       # Cấu hình 13 đặc trưng & metadata
+    ├── run.bat                         # Kịch bản 1-click chạy Web và tự mở trình duyệt
+    ├── core/                           # Bộ nạp mô hình & suy luận thời gian thực
+    ├── templates/                      # Giao diện HTML5 3 Tab
+    └── static/                         # CSS Glassmorphic & JavaScript tương tác AJAX
 ```
+
+---
+
+## 🌐 KHỞI CHẠY ỨNG DỤNG WEB_AIR (1-CLICK RUN)
+
+Ứng dụng **Web_Air** cho phép tương tác trực tiếp với các mô hình đã huấn luyện trên 7 triệu dòng:
+* **Khởi chạy nhanh:** Nhấp đúp chuột vào tệp [`Web_Air/run.bat`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Web_Air/run.bat).
+* **Địa chỉ truy cập:** `http://127.0.0.1:8000` (hoặc xem tài liệu API tại `http://127.0.0.1:8000/docs`).
+* **3 Tab chức năng:**
+  1. **🎯 Dự Đoán Chuyến Bay:** Nhập thông số chuyến bay (hoặc chọn 4 mẫu có sẵn) $\to$ Dự đoán nguyên nhân trễ, phân bố xác suất và lời khuyên hành khách; hỗ trợ **chạy đối đầu cùng lúc cả 6 mô hình**.
+  2. **📊 Bảng Đối Sánh 7M:** Bảng vàng vinh danh các mô hình dẫn đầu và số liệu 9 chỉ số hiệu năng trên 7 triệu dòng.
+  3. **🖼️ Thư Viện Biểu Đồ:** Duyệt và phóng to toàn màn hình 24 biểu đồ khoa học xuất bản từ thực nghiệm.
 
 ---
 
 ## 🛠️ CÔNG NGHỆ CHÍNH
 
 * **Tầng Lưu trữ & Xử lý:** Apache Hadoop HDFS, Apache Spark (PySpark DataFrame, Spark SQL, Spark MLlib).
-* **Tối ưu hóa định dạng:** Apache Parquet có nén Snappy phân vùng theo tháng.
+* **Tối ưu hóa định dạng:** Apache Parquet có nén Snappy phân vùng theo tháng (`month`).
 * **Mô hình học máy:**
   * *Nền tảng:* Logistic Regression, Decision Tree, Random Forest (Đề xuất phân tán).
-  * *Cải tiến SOTA:* LightGBM, CatBoost, XGBoost.
-* **Tầng Serving & Trực quan hóa:** MongoDB, FastAPI, React, Plotly.js / Chart.js.
+  * *Cải tiến SOTA:* LightGBM, CatBoost (F1 cao nhất 70.83%), XGBoost (GPU nhanh nhất 19.27s).
+* **Tầng Serving & Trực quan hóa:** FastAPI, Uvicorn, Jinja2, HTML5/CSS Glassmorphic, Plotly, Seaborn.

@@ -18,42 +18,43 @@
   2. **Hướng Spark (Distributed Big Data):** Sử dụng Apache Spark (PySpark, Parquet, Spark MLlib) để chứng minh năng lực xử lý phân tán vượt trội.
 
 ## Current Status
-* **Hiện trạng thực tế:** **Đã hoàn thành đề cương & Đã tải bộ dữ liệu**.
-* Chưa tạo mã nguồn thực thi hay pipeline nào khác.
-* File dữ liệu gốc [`flight_data_2024.csv`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Flight%20Delay%20Dataset%20%E2%80%94%202024/flight_data_2024.csv) đã sẵn sàng (7,079,081 dòng, 35 cột).
-* File từ điển dữ liệu [`flight_data_2024_data_dictionary.csv`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Flight%20Delay%20Dataset%20%E2%80%94%202024/flight_data_2024_data_dictionary.csv) đã được bổ sung giải thích nghĩa tiếng Việt.
+* **Hiện trạng thực tế:** **Đã hoàn thành toàn bộ Pipeline Big Data & Web App 7M**:
+  1. **ETL & Storage:** Đã chuyển đổi thành công 7,079,081 dòng thô thành 6,965,267 dòng sạch định dạng Apache Parquet nén Snappy phân vùng 12 tháng (kích thước 228.4 MB, nén 81.7%, tốc độ 65.42s).
+  2. **Huấn luyện Mô hình 100% 7 Triệu Dòng (Phương án B 70/15/15):**
+     - Đã huấn luyện thành công 6 mô hình Baseline tận dụng GPU NVIDIA RTX 5050 (XGBoost 19.27s, CatBoost F1 70.83%) và CPU Ryzen 7.
+     - Đã huấn luyện thành công mô hình Apache Spark MLlib Random Forest phân tán (49.89s, RAM 1,012 MB).
+  3. **Bộ số liệu & Ấn phẩm:** Đã xuất bản bảng đối sánh toàn diện và trọn bộ 24 biểu đồ khoa học chất lượng cao trong `results/baseline/`.
+  4. **Web Application:** Đã xây dựng hoàn chỉnh ứng dụng Web Python độc lập tại [`Web_Air/`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Web_Air) với giao diện 3 Tab, hỗ trợ suy luận thời gian thực và kịch bản 1-click `run.bat`.
 
 ## Architecture
 * **Lưu trữ:** HDFS / Parquet nén Snappy phân vùng theo `month`.
-* **Xử lý & ML:** Apache Spark (PySpark, Spark SQL, Spark MLlib `RandomForestClassifier`).
-* **Kho dữ liệu & Serving:** Apache Hive $\to$ MongoDB $\to$ FastAPI REST API.
-* **Trực quan hóa:** React Dashboard + Plotly.js / Chart.js.
+* **Xử lý & ML:** Apache Spark (PySpark, Spark SQL, Spark MLlib `RandomForestClassifier`) song song với Hướng Thuần CPU/GPU.
+* **Kho dữ liệu & Serving:** MongoDB / File Parquet $\to$ FastAPI REST API (`Web_Air`).
+* **Trực quan hóa:** Web_Air Dashboard (FastAPI + Jinja2 + HTML5/CSS Glassmorphic) với 3 Tab chuyên biệt.
 
 ## Tech Stack
-* **Phần cứng Local xác nhận:** AMD Ryzen 7 250 (8C/16T), RAM 16GB (khả dụng ~4.2GB), GPU NVIDIA RTX 5050 Laptop, SSD C: trống 71.9GB.
+* **Phần cứng Local xác nhận:** AMD Ryzen 7 250 (8C/16T), RAM 16GB, GPU NVIDIA GeForce RTX 5050 Laptop GPU (CUDA), SSD C: trống >60GB.
 * **Môi trường Cloud đối chứng:** Kaggle Notebook (4 vCPU, 30GB RAM, 2x NVIDIA Tesla T4 32GB VRAM).
 * **Ngôn ngữ & Runtime:** Python 3.13, OpenJDK 17.0.19 (đã có trên máy).
-* **Framework:** PySpark 3.5.x, Scikit-learn, FastAPI, MongoDB, React.
+* **Framework:** PySpark 3.5.x, Scikit-learn, XGBoost, CatBoost, LightGBM, FastAPI, Uvicorn.
 
 ## Critical Files
-1. [`doc/nguyen-tac-lam-viec-dai.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/nguyen-tac-lam-viec-dai.md): Bản quy tắc làm việc dài và tiêu chuẩn tri thức AI.
-2. [`doc/05_WORKLOG_AND_HANDOVER.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/05_WORKLOG_AND_HANDOVER.md): Nhật ký bàn giao tiến độ qua từng phiên làm việc.
-3. [`doc/08_HARDWARE_AND_ENVIRONMENT_SPECS.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/08_HARDWARE_AND_ENVIRONMENT_SPECS.md): Thông số phần cứng đo đạc thực tế của máy bạn và Kaggle.
-4. [`doc/09_DUAL_APPROACH_PLAN.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/09_DUAL_APPROACH_PLAN.md): Phương pháp luận chi tiết phân định 2 hướng Thuần vs Spark.
-5. [`Nhom6_T4_C10-12_BaoCao.docx`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Nhom6_T4_C10-12_BaoCao.docx): File đề cương Word chính thức nộp cho GVHD.
+1. [`Web_Air/run.bat`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Web_Air/run.bat): Kịch bản 1-click khởi chạy Web App trực quan.
+2. [`doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md): Báo cáo thực nghiệm 7 triệu dòng CPU & GPU RTX 5050.
+3. [`doc/14_HUONG_DAN_TRIEN_KHAI_SPARK_CLUSTER_3_LAPTOP_TAILSCALE.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/14_HUONG_DAN_TRIEN_KHAI_SPARK_CLUSTER_3_LAPTOP_TAILSCALE.md): Hướng dẫn kết nối 3 laptop tại nhà thành cụm Spark phân tán qua Tailscale VPN.
+4. [`doc/05_WORKLOG_AND_HANDOVER.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/05_WORKLOG_AND_HANDOVER.md): Nhật ký bàn giao tiến độ qua từng phiên làm việc.
+5. [`doc/09_DUAL_APPROACH_PLAN.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/09_DUAL_APPROACH_PLAN.md): Phương pháp luận chi tiết phân định 2 hướng Thuần vs Spark.
 
 ## Important Rules
-1. **Tuyệt đối không dùng `pd.read_csv` nạp trọn vẹn 1.2 GB dữ liệu vào RAM máy Local** $\to$ Sẽ gây sập IDE/OOM (vì RAM trống máy local chỉ còn ~4.2 GB).
-2. **Luôn kiểm thử logic trên file mẫu [`flight_data_2024_sample.csv`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Flight%20Delay%20Dataset%20%E2%80%94%202024/flight_data_2024_sample.csv)** trước khi chạy tập dữ liệu lớn.
-3. **Phòng chống Data Leakage:** Không đưa các cột phát sinh sau khi cất cánh/hạ cánh (`dep_time`, `dep_delay`, `arr_time`, `actual_elapsed_time`,...) vào làm feature đầu vào.
-4. **Quy định Check-in & Check-out:** Phải cập nhật [`doc/05_WORKLOG_AND_HANDOVER.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/05_WORKLOG_AND_HANDOVER.md) sau mỗi phiên làm việc.
+1. **Tiết kiệm RAM cục bộ:** Luôn sử dụng ma trận `float32` hoặc xử lý phân khúc (Streaming Chunking) khi đọc dữ liệu lớn, tránh nạp thô CSV bằng `pd.read_csv`.
+2. **Phòng chống Data Leakage:** Không đưa các cột phát sinh sau khi cất cánh/hạ cánh (`dep_time`, `dep_delay`, `arr_time`, `actual_elapsed_time`,...) vào làm feature đầu vào.
+3. **Quy định Check-in & Check-out:** Phải cập nhật [`doc/05_WORKLOG_AND_HANDOVER.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/05_WORKLOG_AND_HANDOVER.md) sau mỗi phiên làm việc.
 
 ## Current Work
-* Thiết lập toàn bộ tài liệu kiến trúc, xác định phương pháp luận 2 hướng và xây dựng kế hoạch hành động chi tiết.
+* Kiểm tra trải nghiệm thực tế Web App `Web_Air`, hoàn thiện báo cáo 7 chương cho GVHD và đồng bộ Git repository.
 
 ## Known Issues
-* Thư mục dự án hiện tại mới chỉ có dataset thô, chưa có môi trường ảo (`venv`), chưa có mã nguồn trong `src/`.
-* RAM khả dụng của máy cục bộ thấp (~4.2 GB), cần chiến lược chạy Hybrid (Dev local trên sample $\to$ Train full trên Kaggle).
+* Mô hình XGBoost khi chạy suy luận đơn mẫu trên CPU sẽ hiển thị cảnh báo DMatrix do được huấn luyện trên GPU CUDA (đã xử lý mượt mà, không ảnh hưởng kết quả).
 
 ## Documentation Map
 * [`00_AI_READ_FIRST.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/00_AI_READ_FIRST.md): File này - Điểm xuất phát của mọi AI.

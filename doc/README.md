@@ -24,13 +24,14 @@ Cấu trúc thư mục gốc: `c:\LeDucLuong\HK VII\NhapMonBigData\DoAn\`
 
 | Tên Thư mục / Tệp tin | Trạng thái hiện tại | Mô tả & Nhiệm vụ của thư mục |
 | :--- | :---: | :--- |
-| [`Flight Delay Dataset — 2024/`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Flight%20Delay%20Dataset%20%E2%80%94%202024) | **Sẵn sàng (Data Ready)** | Chứa toàn bộ dữ liệu thô tải từ Kaggle (~1.31 GB):<br>• `flight_data_2024.csv`: 7,079,081 dòng, 35 cột.<br>• `flight_data_2024_sample.csv`: 10,000 dòng mẫu để dev/test.<br>• `flight_data_2024_data_dictionary.csv`: metadata từ điển dữ liệu. |
-| [`doc/`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc) | **Đang cập nhật (Active)** | Trung tâm tài liệu hóa cho dự án và bộ nhớ ngữ cảnh cho các AI Agent (Dataset Spec, Architecture, Roadmap, AI Guidelines). |
+| [`Flight Delay Dataset — 2024/`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Flight%20Delay%20Dataset%20%E2%80%94%202024) | **Sẵn sàng (Data Ready)** | Chứa toàn bộ dữ liệu thô tải từ Kaggle (1.22 GB CSV) và tệp dữ liệu sạch `cleaned_flight_data_2024.parquet` (6,965,267 dòng sạch phân vùng 12 tháng, 228.4 MB). |
+| [`src/`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src) | **Hoàn thành (Done)** | Mã nguồn ETL chunking, Baseline 6 mô hình CPU/GPU (`train_all_7m.py`), Apache Spark MLlib phân tán, và utils trực quan hóa 24 biểu đồ. |
+| [`models/`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/models) | **Hoàn thành (Done)** | Chứa trọng số 6 mô hình `.joblib` đã huấn luyện 100% trên 7M dòng (`models/baseline/`) và mô hình Spark Random Forest (`models/spark/`). |
+| [`results/`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/results) | **Hoàn thành (Done)** | Bộ số liệu CSV/JSON đối sánh và trọn bộ 24 biểu đồ khoa học chất lượng cao (11 biểu đồ ghép, 13 biểu đồ riêng). |
+| [`Web_Air/`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Web_Air) | **Hoàn thành (Done)** | Ứng dụng Web Python FastAPI độc lập 3 Tab (Dự đoán chuyến bay, Bảng đối sánh 7M, Thư viện biểu đồ) kèm kịch bản 1-click `run.bat`. |
+| [`doc/`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc) | **Đang cập nhật (Active)** | Trung tâm tri thức dự án gồm 14 tài liệu đặc tả, kiến trúc, thực nghiệm và cẩm nang phân tán. |
 | [`Bao_Cao/`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Bao_Cao) | **Khởi tạo (Initialized)** | Thư mục chứa các tài liệu báo cáo chính thức, slide thuyết trình, bản thảo báo cáo nghiệm thu 7 chương của đồ án. |
 | [`Nhom6_T4_C10-12_BaoCao.docx`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/Nhom6_T4_C10-12_BaoCao.docx) | **Đã hoàn thành đề cương** | File Word đề cương chi tiết của đồ án (Đã được GVHD duyệt định hướng và khung 7 chương). |
-| *(Dự kiến tạo)* `src/` hoặc `notebooks/` | **Sắp thực hiện** | Sẽ chứa mã nguồn PySpark, kịch bản ETL HDFS, Spark MLlib pipeline huấn luyện mô hình Random Forest. |
-| *(Dự kiến tạo)* `backend/` | **Sắp thực hiện** | REST API xây dựng bằng FastAPI để truy vấn MongoDB và phục vụ mô hình inference. |
-| *(Dự kiến tạo)* `dashboard/` | **Sắp thực hiện** | Giao diện Dashboard trực quan hóa (React + Plotly.js / Chart.js). |
 
 ---
 
@@ -67,6 +68,8 @@ Các AI Agent khi tham gia dự án cần tra cứu các file chi tiết tương
 11. [`11_Chay_Full_7m_DecisionTree_CatBoost_Ensemble.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/11_Chay_Full_7m_DecisionTree_CatBoost_Ensemble.md): Hướng dẫn và báo cáo huấn luyện 7 triệu dòng.
 12. [`12_SO_SANH_TIEN_XU_LY_DOAN_VA_NHANH_KHAC.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/12_SO_SANH_TIEN_XU_LY_DOAN_VA_NHANH_KHAC.md): **[BÁO CÁO ĐỐI SÁNH]** Phân tích chi tiết sự khác biệt về tiền xử lý dữ liệu giữa folder `DoAn` và `nhanh_khac`.
 13. [`13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md): **[BÁO CÁO THỰC NGHIỆM 7M]** Kết quả huấn luyện 100% dữ liệu (6.96M dòng) cho 6 mô hình CPU & GPU NVIDIA RTX 5050 và đối sánh Spark RF.
+14. [`14_HUONG_DAN_TRIEN_KHAI_SPARK_CLUSTER_3_LAPTOP_TAILSCALE.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/14_HUONG_DAN_TRIEN_KHAI_SPARK_CLUSTER_3_LAPTOP_TAILSCALE.md): **[CẨM NANG CỤM 3 MÁY Ở NHÀ]** Hướng dẫn kết nối 3 laptop tại nhà riêng qua Tailscale Mesh VPN thành cụm Apache Spark phân tán thực thụ.
+
 
 
 

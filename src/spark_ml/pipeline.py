@@ -38,15 +38,23 @@ from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 from sklearn.metrics import classification_report
 
 MODELS_DIR = os.path.join(BASE_DIR, "models/spark")
-METRICS_DIR = os.path.join(BASE_DIR, "results/metrics")
-FIGURES_DIR = os.path.join(BASE_DIR, "results/figures")
+METRICS_DIR = os.path.join(BASE_DIR, "results/spark/metrics")
+FIGURES_DIR = os.path.join(BASE_DIR, "results/spark/figures")
+COMPARISON_DIR = os.path.join(BASE_DIR, "results/comparison")
+BASELINE_METRICS_DIR = os.path.join(BASE_DIR, "results/baseline/metrics")
 
 TARGET_NAMES = ['OnTime', 'Carrier', 'Weather', 'NAS', 'Security', 'LateAircraft']
 
-def create_spark_session(app_name="FlightDelay_SparkML"):
-    """Khởi tạo SparkSession tối ưu hóa bộ nhớ cho đơn máy hoặc cụm."""
-    return SparkSession.builder \
-        .appName(app_name) \
+def create_spark_session(app_name="FlightDelay_SparkML", master=None):
+    """Khởi tạo SparkSession tối ưu hóa bộ nhớ cho đơn máy hoặc cụm Tailscale."""
+    builder = SparkSession.builder.appName(app_name)
+    if master:
+        builder = builder.master(master)
+        local_ip = os.environ.get("SPARK_LOCAL_IP")
+        if local_ip:
+            builder = builder.config("spark.driver.host", local_ip) \
+                             .config("spark.driver.bindAddress", local_ip)
+    return builder \
         .config("spark.driver.memory", "4g") \
         .config("spark.executor.memory", "4g") \
         .config("spark.sql.shuffle.partitions", "16") \
@@ -217,6 +225,12 @@ def export_grand_comparison(spark_metrics, spark_report_dict, baseline_csv_path=
         grand_csv_path = os.path.join(METRICS_DIR, "grand_model_comparison.csv")
         grand_df.to_csv(grand_csv_path, index=False)
         print(f"[✓] Đã tạo bảng đối sánh tổng thể 7 mô hình: {grand_csv_path}")
+
+        # Đồng bộ sang results/comparison
+        os.makedirs(COMPARISON_DIR, exist_ok=True)
+        comparison_csv_path = os.path.join(COMPARISON_DIR, "grand_model_comparison_7m.csv")
+        grand_df.to_csv(comparison_csv_path, index=False)
+        print(f"[✓] Đã đồng bộ bảng đối sánh sang: {comparison_csv_path}")
         
         # Vẽ biểu đồ đối sánh trực diện Random Forest CPU vs Random Forest Spark
         rf_comparison = grand_df[grand_df["Model"].str.contains("Random Forest")]
@@ -235,7 +249,6 @@ def plot_rf_showdown(rf_df):
     ax1 = axes[0]
     x = np.arange(2)
     width = 0.35
-    
     train_times = rf_df['Train Time (s)'].values
     latencies = rf_df['Latency (ms/1k)'].values
     
@@ -274,16 +287,31 @@ def plot_rf_showdown(rf_df):
     
     fig_path = os.path.join(FIGURES_DIR, "grand_rf_comparison.png")
     plt.savefig(fig_path, dpi=300, bbox_inches='tight')
+    
+    # Đồng bộ sang comparison
+    os.makedirs(COMPARISON_DIR, exist_ok=True)
+    comp_fig_path = os.path.join(COMPARISON_DIR, "grand_rf_showdown_7m.png")
+    plt.savefig(comp_fig_path, dpi=300, bbox_inches='tight')
     plt.close()
     print(f"[✓] Đã xuất biểu đồ đối sánh RF tối hậu: {fig_path}")
 
 def main():
+    default_parquet = os.path.join(BASE_DIR, "Flight Delay Dataset — 2024/cleaned_flight_data_2024.parquet")
+    fallback_parquet = os.path.join(BASE_DIR, "Flight Delay Dataset — 2024/cleaned_sample.parquet")
+    initial_data = default_parquet if os.path.exists(default_parquet) else fallback_parquet
+
     parser = argparse.ArgumentParser(description="Chạy Spark MLlib Pipeline")
     parser.add_argument(
         "--data",
         type=str,
-        default=os.path.join(BASE_DIR, "Flight Delay Dataset — 2024/cleaned_sample.parquet"),
+        default=initial_data,
         help="Đường dẫn dữ liệu Parquet đã làm sạch"
+    )
+    parser.add_argument(
+        "--master",
+        type=str,
+        default=os.environ.get("SPARK_MASTER_URL", None),
+        help="Địa chỉ Spark Master URL (ví dụ: spark://100.80.1.10:7077). Mặc định là None (chạy local)."
     )
     parser.add_argument(
         "--num-trees",
@@ -305,7 +333,7 @@ def main():
     )
     args = parser.parse_args()
     
-    spark = create_spark_session()
+    spark = create_spark_session(master=args.master)
     spark.sparkContext.setLogLevel("WARN")
     
     print(f"[*] Đang nạp dữ liệu vào Spark DataFrame từ: {args.data}")
@@ -352,7 +380,16 @@ def main():
         save_model_path=args.save_model
     )
     
-    baseline_csv = os.path.join(METRICS_DIR, "baseline_model_comparison.csv")
+    baseline_candidates = [
+        os.path.join(BASELINE_METRICS_DIR, "grand_model_comparison_7m.csv"),
+        os.path.join(BASELINE_METRICS_DIR, "baseline_model_comparison.csv")
+    ]
+    baseline_csv = None
+    for cand in baseline_candidates:
+        if os.path.exists(cand):
+            baseline_csv = cand
+            break
+
     export_grand_comparison(metrics, report, baseline_csv)
     
     spark.stop()

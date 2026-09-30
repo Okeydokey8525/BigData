@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web_Air - Hệ Thống Dự Báo & Đối Sánh Mô Hình Trễ Chuyến Bay 7M</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <header class="navbar">
+        <div class="nav-container">
+            <div class="brand">
+                <div class="brand-icon">✈️</div>
+                <div class="brand-text">
+                    <h1>Web_Air</h1>
+                    <span class="subtext">Hệ Thống Phân Tích & Dự Báo Trễ Chuyến Bay 7 Triệu Dòng</span>
+                </div>
+            </div>
+
+            <!-- TABS NAVIGATION -->
+            <nav class="nav-tabs">
+                <button class="tab-btn active" data-tab="tab-predict">
+                    <span class="tab-icon">🎯</span>
+                    <span class="tab-title">Dự Đoán Chuyến Bay</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-benchmark">
+                    <span class="tab-icon">📊</span>
+                    <span class="tab-title">Bảng Đối Sánh 7M</span>
+                </button>
+                <button class="tab-btn" data-tab="tab-figures">
+                    <span class="tab-icon">🖼️</span>
+                    <span class="tab-title">Thư Viện Biểu Đồ (24)</span>
+                </button>
+            </nav>
+
+            <!-- SYSTEM PILL -->
+            <div class="sys-badge" id="sys-status-badge" title="Cấu hình máy chủ thực nghiệm">
+                <span class="dot"></span>
+                <span id="sys-summary">RTX 5050 | Ryzen 7</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="main-content">
+        <!-- =============================================================== -->
+        <!-- TAB 1: DỰ ĐOÁN CHUYẾN BAY (REALTIME INFERENCE & BATTLE) -->
+        <!-- =============================================================== -->
+        <section id="tab-predict" class="tab-pane active">
+            <!-- PRESETS QUICK BAR -->
+            <div class="presets-bar">
+                <span class="presets-label">⚡ Chuyến bay mẫu thử nghiệm nhanh:</span>
+                <div class="presets-list">
+                    {% for p in presets %}
+                    <button class="preset-chip" onclick="applyPreset('{{ p.id }}')">
+                        <strong>{{ p.origin }} ➔ {{ p.dest }}</strong> ({{ p.op_unique_carrier }})
+                    </button>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="predict-grid">
+                <!-- FORM NHẬP THÔNG TIN -->
+                <div class="card form-card">
+                    <div class="card-header">
+                        <h2>Thông Tin Chuyến Bay</h2>
+                        <span class="badge badge-info">13 Đặc Trưng Chuẩn</span>
+                    </div>
+                    <form id="prediction-form" onsubmit="event.preventDefault(); handlePredict(false);">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="op_unique_carrier">Hãng Hàng Không</label>
+                                <select id="op_unique_carrier" name="op_unique_carrier" required>
+                                    {% for c in carriers %}
+                                    <option value="{{ c.code }}" {% if c.code == 'DL' %}selected{% endif %}>
+                                        {{ c.code }} - {{ c.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="model_id">Mô Hình Học Máy</label>
+                                <select id="model_id" name="model_id" required>
+                                    {% for m in models %}
+                                    <option value="{{ m.id }}" {% if m.id == 'catboost' %}selected{% endif %}>
+                                        {{ m.name }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="origin">Sân Bay Đi (Origin)</label>
+                                <input list="airports-list" id="origin" name="origin" value="JFK" placeholder="Mã IATA (VD: JFK)" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="dest">Sân Bay Đến (Dest)</label>
+                                <input list="airports-list" id="dest" name="dest" value="LAX" placeholder="Mã IATA (VD: LAX)" required>
+                            </div>
+                            <datalist id="airports-list">
+                                {% for a in airports %}
+                                <option value="{{ a.code }}">{{ a.code }} - {{ a.name }}</option>
+                                {% endfor %}
+                            </datalist>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="fl_date">Ngày Khởi Hành</label>
+                                <input type="date" id="fl_date" name="fl_date" value="2024-07-15" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="dep_time_str">Giờ Cất Cánh (HH:MM)</label>
+                                <input type="time" id="dep_time_str" name="dep_time_str" value="08:30" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="crs_elapsed_time">Thời Gian Bay Dự Kiến (Phút)</label>
+                                <input type="number" id="crs_elapsed_time" name="crs_elapsed_time" value="360" min="15" max="1200" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="distance">Cự Ly Chuyến Bay (Dặm - Miles)</label>
+                                <input type="number" id="distance" name="distance" value="2475" min="20" max="6000" required>
+                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button type="submit" class="btn btn-primary" id="btn-single-predict">
+                                <span>🚀</span> Chạy Dự Đoán Mô Hình
+                            </button>
+                            <button type="button" class="btn btn-secondary" onclick="handlePredict(true)">
+                                <span>⚔️</span> Đối Đầu Cả 6 Mô Hình
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- KHU VỰC HIỂN THỊ KẾT QUẢ -->
+                <div class="card result-card" id="result-viewport">
+                    <!-- TRẠNG THÁI CHỜ -->
+                    <div id="result-placeholder" class="empty-state">
+                        <div class="empty-icon">🛫</div>
+                        <h3>Sẵn Sàng Dự Báo Chuyến Bay</h3>
+                        <p>Nhập thông số chuyến bay ở bên trái hoặc chọn 1 chuyến bay mẫu, sau đó nhấn <strong>Chạy Dự Đoán</strong> để nhận kết quả phân tích theo thời gian thực.</p>
+                        <div class="model-pills">
+                            <span class="pill">CatBoost GPU</span>
+                            <span class="pill">XGBoost GPU</span>
+                            <span class="pill">Random Forest CPU</span>
+                            <span class="pill">LightGBM</span>
+                            <span class="pill">Decision Tree</span>
+                            <span class="pill">Logistic Regression</span>
+                        </div>
+                    </div>
+
+                    <!-- KẾT QUẢ ĐƠN LẺ -->
+                    <div id="result-single" class="result-display" style="display: none;">
+                        <div class="cause-banner" id="res-banner">
+                            <div class="cause-icon-big" id="res-icon">✅</div>
+                            <div class="cause-text-group">
+                                <div class="cause-tag" id="res-badge">ĐÚNG GIỜ</div>
+                                <h3 id="res-title">Đúng Giờ hoặc Trễ Nhẹ (&lt; 15 phút)</h3>
+                                <p id="res-desc">Mô tả nguyên nhân trễ...</p>
+                            </div>
+                        </div>
+
+                        <!-- METRICS ROW -->
+                        <div class="metrics-chips">
+                            <div class="chip">
+                                <span class="chip-label">Độ Tin Cậy</span>
+                                <span class="chip-val" id="res-confidence">95.4%</span>
+                            </div>
+                            <div class="chip">
+                                <span class="chip-label">Độ Trễ Suy Luận</span>
+                                <span class="chip-val" id="res-latency">12.3 ms</span>
+                            </div>
+                            <div class="chip">
+                                <span class="chip-label">Mô Hình Sử Dụng</span>
+                                <span class="chip-val" id="res-model">CatBoost</span>
+                            </div>
+                        </div>
+
+                        <!-- LỜI KHUYÊN HÀNH KHÁCH -->
+                        <div class="advice-box">
+                            <div class="advice-header">
+                                <span>💡</span> <strong>Lời Khuyên Dành Cho Hành Khách:</strong>
+                            </div>
+                            <p id="res-advice">Kiểm tra thông tin chuyến bay tại cửa ra tàu bay...</p>
+                        </div>
+
+                        <!-- PHÂN BỐ XÁC SUẤT 6 LỚP -->
+                        <div class="prob-section">
+                            <h4>Phân Bố Xác Suất 6 Nhóm Nguyên Nhân</h4>
+                            <div id="prob-bars" class="prob-list">
+                                <!-- Dynamic bars -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- KẾT QUẢ ĐỐI ĐẦU ĐA MÔ HÌNH -->
+                    <div id="result-battle" class="result-display" style="display: none;">
+                        <div class="consensus-box">
+                            <div class="consensus-badge">🏆 SỰ ĐỒNG THUẬN CỦA HỆ THỐNG</div>
+                            <h3 id="battle-consensus-title">Đa số mô hình dự đoán: Đúng Giờ (5/6 mô hình)</h3>
+                            <div class="battle-highlights">
+                                <span id="battle-fastest">⚡ Mô hình phản hồi nhanh nhất: Decision Tree (0.67ms)</span>
+                            </div>
+                        </div>
+
+                        <div class="battle-grid" id="battle-cards">
+                            <!-- Dynamic 6 model cards -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- TAB 2: BẢNG ĐỐI SÁNH HIỆU NĂNG 7 TRIỆU DÒNG (GRAND COMPARISON) -->
+        <!-- =============================================================== -->
+        <section id="tab-benchmark" class="tab-pane">
+            <div class="section-header">
+                <h2>Bảng Vàng Đối Sánh Toàn Diện 7 Mô Hình Học Máy</h2>
+                <p>Kết quả thực nghiệm chính thức trên 100% tập dữ liệu chuyến bay Hoa Kỳ năm 2024 (6,965,267 dòng sạch).</p>
+            </div>
+
+            <!-- TOP 3 CHAMPIONS -->
+            <div class="champions-grid">
+                <div class="champ-card gold">
+                    <div class="champ-icon">🏆</div>
+                    <div class="champ-info">
+                        <h3>CatBoost (GPU/CPU SOTA)</h3>
+                        <p class="champ-metric">Weighted F1: <strong>70.83%</strong> | Macro F1: <strong>16.54%</strong></p>
+                        <span class="champ-note">Dẫn đầu tuyệt đối về chất lượng phân loại 6 nhãn trễ trên 7M dòng.</span>
+                    </div>
+                </div>
+                <div class="champ-card lightning">
+                    <div class="champ-icon">⚡</div>
+                    <div class="champ-info">
+                        <h3>XGBoost (GPU CUDA RTX 5050)</h3>
+                        <p class="champ-metric">Thời gian huấn luyện: <strong>19.27 giây</strong></p>
+                        <span class="champ-note">Tăng tốc phần cứng GPU nhanh hơn <strong>5.5 lần</strong> so với Random Forest CPU.</span>
+                    </div>
+                </div>
+                <div class="champ-card distributed">
+                    <div class="champ-icon">🌐</div>
+                    <div class="champ-info">
+                        <h3>Spark MLlib Random Forest</h3>
+                        <p class="champ-metric">RAM tiêu thụ: <strong>1,012 MB</strong> | Thời gian: <strong>49.89s</strong></p>
+                        <span class="champ-note">Mô hình phân tán hạt nhân của đồ án: Nhanh hơn <strong>2.8 lần</strong> RF Scikit-Learn.</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- BẢNG ĐỐI SÁNH CHÍNH -->
+            <div class="card table-card">
+                <div class="table-responsive">
+                    <table class="data-table" id="metrics-table">
+                        <thead>
+                            <tr>
+                                <th>Mô Hình</th>
+                                <th>Thời Gian Train (s)</th>
+                                <th>Latency (ms/1k)</th>
+                                <th>Peak RAM (MB)</th>
+                                <th>Accuracy (%)</th>
+                                <th>Weighted Precision (%)</th>
+                                <th>Weighted Recall (%)</th>
+                                <th>Weighted F1 (%)</th>
+                                <th>Macro F1 (%)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="metrics-tbody">
+                            <tr><td colspan="9" class="loading-cell">Đang nạp dữ liệu từ results/metrics...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- BẢNG BÓC TÁCH 4 GIAI ĐOẠN PIPELINE -->
+            <div class="card table-card" style="margin-top: 24px;">
+                <div class="card-header">
+                    <h2>Bóc Tách Thời Gian 4 Giai Đoạn Pipeline (Toàn Trình 7.07M Dòng)</h2>
+                    <span class="badge badge-primary">So Sánh Hướng Thuần vs Apache Spark</span>
+                </div>
+                <div class="table-responsive">
+                    <table class="data-table" id="stages-table">
+                        <thead>
+                            <tr>
+                                <th>Phương Pháp Tiếp Cận</th>
+                                <th>ETL (s)</th>
+                                <th>Feature Engineering (s)</th>
+                                <th>Huấn Luyện Model (s)</th>
+                                <th>Đánh Giá & Xuất Bản (s)</th>
+                                <th>Tổng Thời Gian (s)</th>
+                                <th>RAM Đỉnh (MB)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="stages-tbody">
+                            <tr><td colspan="7" class="loading-cell">Đang tải dữ liệu giai đoạn pipeline...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+        <!-- =============================================================== -->
+        <!-- TAB 3: THƯ VIỆN 24 BIỂU ĐỒ KHOA HỌC (FIGURES GALLERY) -->
+        <!-- =============================================================== -->
+        <section id="tab-figures" class="tab-pane">
+            <div class="section-header">
+                <h2>Thư Viện 24 Biểu Đồ Khoa Học Thực Nghiệm 7M</h2>
+                <p>Hệ thống trực quan hóa toàn diện phục vụ báo cáo đồ án của Nhóm 6 (TS. Phan Hồ Viết Trường).</p>
+            </div>
+
+            <!-- FIGURE FILTERS -->
+            <div class="filter-bar">
+                <button class="filter-btn active" data-filter="all">Tất Cả (24)</button>
+                <button class="filter-btn" data-filter="overview">Tổng Quan & Đối Sánh (11)</button>
+                <button class="filter-btn" data-filter="confusion_matrix">Ma Trận Nhầm Lẫn - CM (7)</button>
+                <button class="filter-btn" data-filter="feature_importance">Tầm Quan Trọng Đặc Trưng (6)</button>
+            </div>
+
+            <!-- FIGURES GRID -->
+            <div class="figures-grid" id="figures-container">
+                <!-- Dynamically loaded figure cards -->
+            </div>
+        </section>
+    </main>
+
+    <!-- LIGHTBOX MODAL PHÓNG TO ẢNH -->
+    <div id="image-modal" class="modal" onclick="closeModal(event)">
+        <div class="modal-content" onclick="event.stopPropagation();">
+            <span class="modal-close" onclick="closeModal()">&times;</span>
+            <img id="modal-img" src="" alt="Biểu đồ phóng to">
+            <div class="modal-caption">
+                <h3 id="modal-title">Tiêu đề biểu đồ</h3>
+                <p id="modal-desc">Mô tả biểu đồ...</p>
+                <a id="modal-download" href="" download class="btn btn-sm btn-secondary">💾 Tải ảnh PNG gốc</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="footer">
+        <div class="footer-container">
+            <p><strong>Đồ án Nhập môn Big Data (HK VII)</strong> - Trường Đại học Công Thương TP. Hồ Chí Minh (HUIT)</p>
+            <p>Đề tài: <em>Ứng dụng thuật toán Random Forest phân tán dự đoán nguyên nhân trễ chuyến bay thương mại: Trường hợp tại Hoa Kỳ năm 2024</em></p>
+            <p class="footer-credits">GVHD: TS. Phan Hồ Viết Trường | Thực hiện: Nhóm 6 (Cù Văn Vĩ An, Lê Đức Lương, Trần Huỳnh Tuấn Anh)</p>
+        </div>
+    </footer>
+
+    <!-- SCRIPT CHÍNH -->
+    <script src="/static/js/main.js"></script>
+</body>
+</html>

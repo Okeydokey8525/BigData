@@ -8,31 +8,26 @@
 
 ## 1. TRẠNG THÁI HIỆN TẠI (CURRENT STATE)
 
-* **Cập nhật lần cuối:** `2026-09-30 16:36:00 (GMT+7)`
-* **Giai đoạn hiện tại:** **Hoàn Tất Tiền Xử Lý Phân Khúc & Huấn Luyện 100% 7 Triệu Dòng Trên CPU & GPU NVIDIA RTX 5050 (Phân Chia Phương Án B 70/15/15)**
+* **Cập nhật lần cuối:** `2026-09-30 17:48:00 (GMT+7)`
+* **Giai đoạn hiện tại:** **Xây Dựng Hoàn Chỉnh Web_Air Dashboard 3 Tab Bằng Python Phục Vụ Chạy & Đối Sánh 6 Mô Hình Học Máy 7M**
 * **Trạng thái công việc:** 
-  1. **Nâng cấp Tiền xử lý theo đối sánh `nhanh_khac`:** Tích hợp đặc trưng thời gian (`dep_min_of_day`, `arr_min_of_day` kiểu `int16`) và streaming chunking (500k/chunk) đọc trực tiếp 7,079,081 dòng CSV, xuất ra 6,965,267 dòng Parquet phân vùng 12 tháng (kích thước 228.39 MB, nén 81.70%, thời gian: 65.42s, Peak RAM: 660.04 MB).
-  2. **Huấn luyện 100% dữ liệu theo Phương án B (Train 70% = 4,875,686, Val 15% = 1,044,790, Test 15% = 1,044,791):**
-     - Ma trận đặc trưng $X$ nạp vào RAM chỉ mất 345.4 MB (`float32`), đọc trong 0.39s.
-     - **Tăng tốc GPU CUDA (NVIDIA GeForce RTX 5050):**
-       + **XGBoost (GPU):** 19.27s (Nhanh hơn gấp **5.5 lần** so với Random Forest CPU 106.79s).
-       + **CatBoost (GPU):** 19.60s, dẫn đầu chất lượng dự báo với **Weighted F1 70.83%** và **Macro F1 16.54%**.
-     - **Mô hình CPU:** Logistic Regression (17.99s), Decision Tree (51.12s), Random Forest CPU 8 threads (106.79s), LightGBM CPU 16 threads (78.93s).
-     - **RAM tiêu thụ tối đa (Peak RAM):** 1.41 GB - 1.91 GB (hoàn toàn an toàn trong RAM khả dụng ~6.4 GB).
-  3. **Tài liệu & Ấn phẩm hoàn tất:**
-     - Tạo báo cáo chuyên sâu [`doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md).
-     - Ghi đè bộ số liệu [`results/metrics/grand_model_comparison_7m.csv`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/results/metrics/grand_model_comparison_7m.csv) và [`results/metrics/baseline_summary_7m.json`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/results/metrics/baseline_summary_7m.json).
-     - Tái sinh toàn bộ 11 biểu đồ ghép trong `results/figures/combined/` và 13 biểu đồ riêng trong `results/figures/individual/`.
-     - Cập nhật các mô hình `.joblib` mới trong `models/baseline/`.
+  1. **Khởi tạo và đóng gói Web Application độc lập tại `Web_Air/`:**
+     - Sử dụng FastAPI + Uvicorn + Jinja2 + HTML5/CSS Glassmorphism hiện đại (không tốn thêm thư viện ngoài).
+     - Thiết kế giao diện 3 Tab trực quan: Tab 1 (Dự đoán chuyến bay thời gian thực & Đối đầu 6 mô hình), Tab 2 (Bảng vàng đối sánh hiệu năng 7M & 4 giai đoạn pipeline), Tab 3 (Thư viện 24 biểu đồ khoa học có phóng to Lightbox).
+  2. **Đồng bộ hóa 100% chuẩn 13 đặc trưng mới nhất:**
+     - Tự động trích xuất `dep_min_of_day`, `arr_min_of_day`, giờ, phút, thứ, phân khúc `dep_time_of_day`, ánh xạ LabelEncoder và StandardScaler khớp với kịch bản `train_all_7m.py`.
+     - Nạp thành công toàn bộ 6 mô hình vào RAM (~350 MB): CatBoost (SOTA), XGBoost (GPU), Random Forest (CPU), LightGBM, Decision Tree, Logistic Regression.
+  3. **Kiểm thử chất lượng thực tế:**
+     - Đạt 100% mã trạng thái HTTP 200 OK trên toàn bộ 9 endpoint (Home, Metadata, Predict, Predict-All, Metrics, Stages, Figures-list, Figures file, System-status).
+     - Tạo file `Web_Air/run.bat` 1-click tự động chọn `venv\Scripts\python.exe` và mở trình duyệt tại `http://127.0.0.1:8000`.
 
 ### 1.1. Việc vừa hoàn thành (Just Completed)
-* [x] Tích hợp cải tiến tiền xử lý trích xuất phút trong ngày (`dep_min_of_day`, `arr_min_of_day`) vào `clean_data.py`, `pipeline.py`, `train_all_7m.py`.
-* [x] Thực thi ETL Streaming Chunking trên 7,079,081 dòng thô, tạo `cleaned_flight_data_2024.parquet` (6,965,267 dòng sạch).
-* [x] Huấn luyện thành công 100% 6 mô hình Baseline trên CPU Ryzen 7 và GPU RTX 5050 với phân chia Phương án B (Train 4.87M, Val 1.04M, Test 1.04M).
-* [x] Xuất bản báo cáo thực nghiệm [`doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md) và liên kết vào `doc/README.md`.
+* [x] Xây dựng toàn bộ mã nguồn `Web_Air/` (`app.py`, `config.py`, `core/model_loader.py`, `core/predictor.py`, `templates/index.html`, `static/css/style.css`, `static/js/main.js`, `run.bat`).
+* [x] Kiểm thử độc lập và kiểm thử HTTP thực tế đạt 100% thành công.
+* [x] Tạo kịch bản khởi chạy 1-click `Web_Air/run.bat`.
 
 ### 1.2. Việc đang tiến hành (In Progress)
-* [ ] Kiểm tra hiển thị Web Dashboard và đồng bộ lên Git.
+* [ ] Kiểm tra giao diện thực tế và đồng bộ lên Git repository.
 
 ---
 
@@ -42,6 +37,8 @@
 
 | Thời gian | Tác nhân (AI/Dev) | Nội dung công việc đã hoàn thành | Tệp tin tạo mới / Chỉnh sửa | Ghi chú & Đánh giá |
 | :--- | :--- | :--- | :--- | :--- |
+| `2026-09-30 17:48` | Antigravity AI | Xây dựng hoàn chỉnh ứng dụng Web Python `Web_Air` phục vụ chạy suy luận và đối sánh 6 mô hình học máy 7M với 3 Tab chuyên biệt (Dự đoán chuyến bay, Bảng đối sánh 7M, Thư viện 24 biểu đồ); đồng bộ chuẩn 13 đặc trưng; tích hợp kịch bản 1-click `run.bat`; kiểm thử 100% đạt chuẩn | `Web_Air/app.py`<br>`Web_Air/config.py`<br>`Web_Air/core/*`<br>`Web_Air/templates/*`<br>`Web_Air/static/*`<br>`Web_Air/run.bat`<br>`doc/05_WORKLOG_AND_HANDOVER.md` | Hoàn thành xuất sắc 100% yêu cầu; RAM chiếm dụng chỉ 350 MB; độ trễ phản hồi cực nhanh |
+| `2026-09-30 17:25` | Antigravity AI | Soạn thảo cẩm nang kỹ thuật hướng dẫn kết nối 3 laptop tại nhà riêng qua Tailscale Mesh VPN thành cụm Apache Spark phân tán; xác thực 100% 24 biểu đồ thực nghiệm 7M đã được tái tạo và lưu mới hoàn chỉnh | `doc/14_HUONG_DAN_TRIEN_KHAI_SPARK_CLUSTER_3_LAPTOP_TAILSCALE.md`<br>`doc/README.md`<br>`doc/05_WORKLOG_AND_HANDOVER.md` | Tài liệu đầy đủ lệnh PowerShell, cấu hình mạng SPARK_LOCAL_IP, mở port firewall và kịch bản demo |
 | `2026-09-30 16:36` | Antigravity AI | Tiếp thu cải tiến từ `nhanh_khac` (thêm `dep_min_of_day`, `arr_min_of_day`), chạy ETL Streaming Chunking trên 7,079,081 dòng CSV (65.42s, Peak RAM 660MB); Huấn luyện thành công 100% 6.96M dòng theo Phương án B (Train 70% / Val 15% / Test 15%) tận dụng GPU NVIDIA RTX 5050 (XGBoost 19.27s, CatBoost 19.60s) và CPU Ryzen 7; Xuất bản báo cáo chi tiết doc/13 | `src/etl/clean_data.py`<br>`src/spark_ml/pipeline.py`<br>`src/baseline/train_all_7m.py`<br>`doc/13_BAO_CAO_HUAN_LUYEN_FULL_7M_BASELINE_CPU_GPU.md`<br>`doc/README.md`<br>`results/metrics/*`<br>`results/figures/*` | Hoàn thành xuất sắc 100% mục tiêu; GPU tăng tốc gấp 5.5 lần so với RF CPU; RAM tối đa 1.91 GB an toàn tuyệt đối |
 | `2026-09-23 16:12` | Antigravity AI | Tiếp thu phản biện của người dùng về việc so sánh 300k vs 7M là không công bằng; tối ưu hóa ma trận đặc trưng float32 (292MB) và huấn luyện lại thành công 100% 6 mô hình CPU/SOTA trên 5.57M dòng Train; ghi đè toàn bộ kết quả CSV, JSON, models và 24 biểu đồ khoa học | `src/baseline/train_all_7m.py`<br>`results/metrics/*`<br>`results/figures/*`<br>`models/baseline/*`<br>`doc/05_WORKLOG_AND_HANDOVER.md` | Hoàn thành xuất sắc 100% mục tiêu; minh chứng thuyết phục Spark RF (49.89s) nhanh hơn gấp 2.8 lần so với RF CPU (139.71s) trên cùng 7 triệu dòng |
 * [x] Nâng cấp [`src/utils/visualize_results.py`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/src/utils/visualize_results.py): Bổ sung đầy đủ các hàm vẽ Radar Chart, Bubble Plot, Grouped Bar, Horizontal Bar, Latency Bar, Peak RAM Bar.

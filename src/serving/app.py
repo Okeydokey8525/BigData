@@ -41,8 +41,8 @@ app.add_middleware(
 
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "../../"))
 MODELS_DIR = os.path.join(BASE_DIR, "models/baseline")
-METRICS_DIR = os.path.join(BASE_DIR, "results/metrics")
-FIGURES_DIR = os.path.join(BASE_DIR, "results/figures")
+METRICS_DIR = os.path.join(BASE_DIR, "results/baseline/metrics") if os.path.exists(os.path.join(BASE_DIR, "results/baseline/metrics")) else os.path.join(BASE_DIR, "results/metrics")
+FIGURES_DIR = os.path.join(BASE_DIR, "results/baseline/figures") if os.path.exists(os.path.join(BASE_DIR, "results/baseline/figures")) else os.path.join(BASE_DIR, "results/figures")
 STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
 TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 
@@ -202,6 +202,8 @@ def get_metrics_table(dataset: str = "7m"):
     """Trả về bảng đối sánh hiệu năng 7 mô hình học máy trên tập dữ liệu 7 triệu dòng."""
     candidates = [
         os.path.join(METRICS_DIR, "grand_model_comparison_7m.csv"),
+        os.path.join(BASE_DIR, "results/comparison/grand_model_comparison_7m.csv"),
+        os.path.join(BASE_DIR, "results/spark/metrics/grand_model_comparison_7m.csv"),
         os.path.join(BASE_DIR, "results/full_7m/metrics/grand_model_comparison_7m.csv"),
         os.path.join(METRICS_DIR, "grand_model_comparison.csv")
     ]
@@ -216,6 +218,8 @@ def get_pipeline_stages():
     """Trả về bảng số liệu chi tiết bóc tách thời gian 4 giai đoạn và toàn trình (7.07M dòng)."""
     candidates = [
         os.path.join(METRICS_DIR, "pipeline_stages_breakdown_7m.csv"),
+        os.path.join(BASE_DIR, "results/comparison/pipeline_stages_breakdown_7m.csv"),
+        os.path.join(BASE_DIR, "results/spark/metrics/pipeline_stages_breakdown_7m.csv"),
         os.path.join(BASE_DIR, "results/full_7m/metrics/pipeline_stages_time_breakdown.csv")
     ]
     for stages_path in candidates:
@@ -246,6 +250,10 @@ def get_figure(filename: str, dataset: str = "7m"):
         os.path.join(FIGURES_DIR, "combined"),
         os.path.join(FIGURES_DIR, "individual"),
         FIGURES_DIR,
+        os.path.join(BASE_DIR, "results/comparison"),
+        os.path.join(BASE_DIR, "results/spark/figures/combined"),
+        os.path.join(BASE_DIR, "results/spark/figures/individual"),
+        os.path.join(BASE_DIR, "results/spark/figures"),
         os.path.join(BASE_DIR, "results/full_7m/figures/combined"),
         os.path.join(BASE_DIR, "results/full_7m/figures/individual"),
         os.path.join(BASE_DIR, "results/full_7m/figures")
