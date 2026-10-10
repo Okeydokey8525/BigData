@@ -87,13 +87,18 @@ def get_memory_usage_mb():
     return psutil.Process(os.getpid()).memory_info().rss / (1024 * 1024)
 
 def run_training_pipeline():
-    parquet_path = r"Flight Delay Dataset — 2024/cleaned_flight_data_2024.parquet"
-    if not os.path.exists(parquet_path):
-        alt_path = "cleaned_flight_data_2024.parquet"
-        if os.path.exists(alt_path):
-            parquet_path = alt_path
-        else:
-            raise FileNotFoundError(f"Không tìm thấy tệp dữ liệu sạch 7M tại: {parquet_path}")
+    possible_paths = [
+        r"Flight Delay Dataset — 2024/cleaned_flight_data_2024.parquet",
+        r"data/cleaned_flight_data_2024.parquet",
+        r"cleaned_flight_data_2024.parquet"
+    ]
+    parquet_path = None
+    for p in possible_paths:
+        if os.path.exists(p):
+            parquet_path = p
+            break
+    if parquet_path is None:
+        raise FileNotFoundError(f"Không tìm thấy tệp dữ liệu sạch 7M tại bất kỳ đường dẫn nào: {possible_paths}")
 
     print("=" * 80)
     print(" HỆ THỐNG THỰC NGHIỆM ĐỒ ÁN BIG DATA: HUẤN LUYỆN 100% TRÊN 7 TRIỆU DÒNG")
@@ -227,14 +232,14 @@ def run_training_pipeline():
         },
         {
             "name": "XGBoost",
-            "model": xgb.XGBClassifier(device='cuda', tree_method='hist', n_estimators=100, max_depth=8, learning_rate=0.08, random_state=42, eval_metric='mlogloss', early_stopping_rounds=15),
+            "model": xgb.XGBClassifier(device='cpu', tree_method='hist', n_estimators=100, max_depth=8, learning_rate=0.08, n_jobs=-1, random_state=42, eval_metric='mlogloss', early_stopping_rounds=15),
             "use_scaled": False,
             "is_tree": True,
             "has_early_stopping": True
         },
         {
             "name": "CatBoost",
-            "model": CatBoostClassifier(iterations=100, depth=8, task_type='GPU', early_stopping_rounds=20, verbose=0, random_state=42),
+            "model": CatBoostClassifier(iterations=100, depth=8, task_type='CPU', thread_count=-1, early_stopping_rounds=20, verbose=0, random_state=42),
             "use_scaled": False,
             "is_tree": True,
             "has_early_stopping": True
@@ -248,7 +253,7 @@ def run_training_pipeline():
     X_lat_test = X_test[:1000]
 
     print("\n" + "-" * 80)
-    print(f" BẮT ĐẦU HUẤN LUYỆN 6 MÔ HÌNH CPU / GPU TRÊN TOÀN BỘ {len(X_train):,} DÒNG TRAIN")
+    print(f" BẮT ĐẦU HUẤN LUYỆN 6 MÔ HÌNH THUẦN CPU TRÊN TOÀN BỘ {len(X_train):,} DÒNG TRAIN")
     print(f" (Tập Validation: {len(X_val):,} dòng để Early Stopping | Tập Test: {len(X_test):,} dòng)")
     print("-" * 80)
 

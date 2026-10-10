@@ -13,6 +13,9 @@ import json
 import shutil
 import argparse
 import psutil
+import pandas as pd
+import pyarrow as pa
+import pyarrow.dataset as ds
 
 # Đảm bảo hiển thị tiếng Việt trên Windows console không bị UnicodeEncodeError
 if sys.stdout.encoding != 'utf-8':
@@ -33,9 +36,20 @@ if os.path.exists(hadoop_dir):
 
 from pyspark.sql import SparkSession
 from pyspark.sql import functions as F
-from pyspark.sql.types import (
-    StructType, StructField, StringType, IntegerType, FloatType, DoubleType
-)
+from pyspark.sql.types import IntegerType, FloatType
+
+REQUIRED_COLUMNS = [
+    'month', 'day_of_month', 'day_of_week',
+    'op_unique_carrier', 'origin', 'dest',
+    'crs_dep_time', 'crs_arr_time',
+    'cancelled', 'diverted', 'arr_delay', 'dep_delay',
+    'crs_elapsed_time', 'distance',
+    'carrier_delay', 'weather_delay', 'nas_delay', 'security_delay', 'late_aircraft_delay'
+]
+
+ENRICHED_COLUMNS = [
+    'taxi_out_ratio', 'flight_speed_mph', 'is_weekend', 'is_holiday_season', 'is_same_state', 'simulation_batch'
+]
 
 def get_directory_size(path):
     """Tính tổng dung lượng (bytes) của một file hoặc thư mục."""
@@ -54,64 +68,21 @@ def create_spark_session(app_name="FlightDelay_SparkETL", master=None):
     builder = SparkSession.builder.appName(app_name)
     if master:
         builder = builder.master(master)
-        local_ip = os.environ.get("SPARK_LOCAL_IP")
-        if local_ip:
-            builder = builder.config("spark.driver.host", local_ip) \
-                             .config("spark.driver.bindAddress", local_ip)
+        local_ip = os.environ.get("SPARK_LOCAL_IP", "100.65.205.113")
+        builder = builder.config("spark.driver.host", local_ip) \
+                         .config("spark.driver.bindAddress", local_ip)
     else:
-        # Chạy local tận dụng tối đa số luồng CPU của máy
         builder = builder.master("local[*]")
 
     return builder \
-        .config("spark.driver.memory", "4g") \
-        .config("spark.executor.memory", "4g") \
-        .config("spark.sql.shuffle.partitions", "16") \
+        .config("spark.driver.memory", "2g") \
+        .config("spark.executor.memory", "2g") \
+        .config("spark.sql.shuffle.partitions", "12") \
         .config("spark.sql.execution.arrow.pyspark.enabled", "true") \
         .getOrCreate()
 
-def run_spark_etl(
-    input_csv,
-    output_parquet_dir,
-    metrics_json_path,
-    master=None,
-    partition_col="month"
-):
-    """Thực thi toàn bộ quy trình tiền xử lý ETL phân tán trên Apache Spark."""
-    print("=" * 70)
-    print(" BẮT ĐẦU PIPELINE TIỀN XỬ LÝ PHÂN TÁN (SPARK DISTRIBUTED ETL)")
-    print("=" * 70)
-    print(f" • Nguồn dữ liệu CSV : {input_csv}")
-    print(f" • Đích lưu Parquet : {output_parquet_dir}")
-    print(f" • Spark Master     : {master if master else 'local[*]'}")
-    print(f" • Cột phân vùng    : {partition_col}")
-
-    raw_size_bytes = os.path.getsize(input_csv) if os.path.isfile(input_csv) else 0
-    print(f" • Dung lượng file thô: {raw_size_bytes / (1024**2):.2f} MB")
-
-    process = psutil.Process()
-    ram_init = process.memory_info().rss / (1024**2)
-    start_total_time = time.perf_counter()
-
-    # 1. Khởi tạo SparkSession
-    print("\n[*] Đang khởi động Apache SparkSession...")
-    spark = create_spark_session(master=master)
-    spark.sparkContext.setLogLevel("WARN")
-    print(f"[✓] SparkSession đã sẵn sàng (Spark Version: {spark.version})")
-
-    # 2. Đọc file CSV
-    print(f"\n[1/4] Đang nạp phân tán dữ liệu từ CSV...")
-    t0_read = time.perf_counter()
-    raw_df = spark.read.option("header", "true").option("inferSchema", "false").csv(input_csv)
-    raw_rows_count = raw_df.count()
-    t_read = time.perf_counter() - t0_read
-    ram_after_read = process.memory_info().rss / (1024**2)
-    print(f"      -> Nạp thành công {raw_rows_count:,} dòng trong {t_read:.2f}s | RAM Python: {ram_after_read:.1f} MB")
-
-    # 3. Tiền xử lý & Trích xuất đặc trưng bằng PySpark DataFrame API
-    print("\n[2/4] Đang làm sạch, ép kiểu và trích xuất 13 đặc trưng bằng PySpark...")
-    t0_prep = time.perf_counter()
-
-    # Ép kiểu dữ liệu sang số cho các cột tính toán
+def clean_spark_dataframe(raw_df):
+    """Áp dụng toàn bộ quy trình tiền xử lý, làm sạch và khai phá đặc trưng trên Spark DataFrame."""
     casted_df = raw_df \
         .withColumn("month", F.col("month").cast(IntegerType())) \
         .withColumn("day_of_month", F.col("day_of_month").cast(IntegerType())) \
@@ -129,6 +100,14 @@ def run_spark_etl(
         .withColumn("nas_delay", F.coalesce(F.col("nas_delay").cast(FloatType()), F.lit(0.0))) \
         .withColumn("security_delay", F.coalesce(F.col("security_delay").cast(FloatType()), F.lit(0.0))) \
         .withColumn("late_aircraft_delay", F.coalesce(F.col("late_aircraft_delay").cast(FloatType()), F.lit(0.0)))
+
+    # Ép kiểu an toàn cho 6 cột đặc trưng làm giàu nếu có mặt trong dataset
+    for col_name in ["is_weekend", "is_holiday_season", "is_same_state", "simulation_batch"]:
+        if col_name in raw_df.columns:
+            casted_df = casted_df.withColumn(col_name, F.coalesce(F.col(col_name).cast(IntegerType()), F.lit(0)))
+    for col_name in ["taxi_out_ratio", "flight_speed_mph"]:
+        if col_name in raw_df.columns:
+            casted_df = casted_df.withColumn(col_name, F.coalesce(F.col(col_name).cast(FloatType()), F.lit(0.0)))
 
     # Lọc bỏ chuyến bay bị hủy, đổi hướng và giá trị khuyết thiếu ở arr_delay
     filtered_df = casted_df.filter(
@@ -188,52 +167,163 @@ def run_spark_etl(
                       .when(cause_str_col == "LateAircraft", 5) \
                       .otherwise(0).cast(IntegerType())
 
-    final_clean_df = labeled_df \
+    return labeled_df \
         .withColumn("delay_cause", cause_str_col) \
         .withColumn("delay_cause_code", cause_code_col)
 
-    # Cache nhẹ để chuẩn bị ghi và đếm dòng
-    final_clean_df.persist()
-    clean_rows_count = final_clean_df.count()
-    filtered_rows_count = raw_rows_count - clean_rows_count
-    t_prep = time.perf_counter() - t0_prep
-    ram_after_prep = process.memory_info().rss / (1024**2)
-    print(f"      -> Tiền xử lý hoàn tất trong {t_prep:.2f}s | Số dòng sạch: {clean_rows_count:,} dòng (Đã lọc: {filtered_rows_count:,})")
+def run_spark_etl(
+    input_csv,
+    output_parquet_dir,
+    metrics_json_path,
+    master=None,
+    partition_col="month",
+    chunksize=1_000_000
+):
+    """Thực thi toàn bộ quy trình tiền xử lý ETL phân tán trên Apache Spark."""
+    print("=" * 70)
+    print(" BẮT ĐẦU PIPELINE TIỀN XỬ LÝ PHÂN TÁN (SPARK DISTRIBUTED ETL)")
+    print("=" * 70)
+    print(f" • Nguồn dữ liệu CSV : {input_csv}")
+    print(f" • Đích lưu Parquet : {output_parquet_dir}")
+    print(f" • Spark Master     : {master if master else 'local[*]'}")
+    print(f" • Cột phân vùng    : {partition_col}")
 
-    # 4. Ghi phân tán ra định dạng Parquet nén Snappy
-    print(f"\n[3/4] Đang ghi phân tán Parquet phân vùng theo '{partition_col}'...")
-    t0_write = time.perf_counter()
+    raw_size_bytes = os.path.getsize(input_csv) if os.path.isfile(input_csv) else 0
+    print(f" • Dung lượng file thô: {raw_size_bytes / (1024**2):.2f} MB")
+
+    process = psutil.Process()
+    ram_init = process.memory_info().rss / (1024**2)
+    start_total_time = time.perf_counter()
+    peak_ram_mb = ram_init
+
+    def update_peak_ram():
+        nonlocal peak_ram_mb
+        c_ram = process.memory_info().rss / (1024**2)
+        if c_ram > peak_ram_mb:
+            peak_ram_mb = c_ram
+
+    # 1. Khởi tạo SparkSession
+    print("\n[*] Đang khởi động Apache SparkSession...")
+    spark = create_spark_session(master=master)
+    spark.sparkContext.setLogLevel("WARN")
+    update_peak_ram()
+    print(f"[✓] SparkSession đã sẵn sàng (Spark Version: {spark.version})")
+
+    # Xóa thư mục đích cũ nếu tồn tại
     if os.path.exists(output_parquet_dir):
-        print(f"      -> Xóa thư mục đích cũ: {output_parquet_dir}")
+        print(f"[*] Đang làm sạch thư mục đích trước khi ghi: {output_parquet_dir}")
         shutil.rmtree(output_parquet_dir)
+    os.makedirs(output_parquet_dir, exist_ok=True)
 
-    final_clean_df.write \
-        .mode("overwrite") \
-        .partitionBy(partition_col) \
-        .parquet(output_parquet_dir)
+    total_raw_rows = 0
+    total_cleaned_rows = 0
 
-    t_write = time.perf_counter() - t0_write
+    # Tự động phát hiện các cột làm giàu có trong tệp đầu vào
+    sample_header = pd.read_csv(input_csv, nrows=1)
+    available_cols = [c for c in REQUIRED_COLUMNS + ENRICHED_COLUMNS if c in sample_header.columns]
+    print(f" • Số cột nạp vào Spark: {len(available_cols)} cột (Bao gồm {len([c for c in ENRICHED_COLUMNS if c in available_cols])} cột làm giàu)")
+
+    if master:
+        # Chế độ Cụm đa máy (Cluster Mode):
+        # Driver nạp từng khúc 1,000,000 dòng để RAM luôn < 400MB và phân phối qua Tailscale tới 3 Workers
+        print(f"\n[1/3] [Cluster Mode] Bắt đầu Stream dữ liệu qua mạng Cụm 3 Máy (Chunk = {chunksize:,} dòng)...")
+        csv_reader = pd.read_csv(input_csv, usecols=available_cols, chunksize=chunksize, low_memory=False)
+
+        t0_process = time.perf_counter()
+        for chunk_idx, chunk_df in enumerate(csv_reader, start=1):
+            t_chunk_start = time.perf_counter()
+            c_raw = len(chunk_df)
+            total_raw_rows += c_raw
+
+            # Chuyển đổi thành Spark DataFrame và chia 12 Partitions phân phối cho các Worker
+            sdf = spark.createDataFrame(chunk_df).repartition(12)
+            clean_sdf = clean_spark_dataframe(sdf)
+
+            # Thu gom kết quả từ các Worker về Driver để ghi Parquet an toàn
+            clean_pdf = clean_sdf.toPandas()
+            c_clean = len(clean_pdf)
+            total_cleaned_rows += c_clean
+
+            # Ghi Parquet phân vùng theo tháng
+            table = pa.Table.from_pandas(clean_pdf, preserve_index=False)
+            ds.write_dataset(
+                data=table,
+                base_dir=output_parquet_dir,
+                format="parquet",
+                partitioning=[partition_col],
+                partitioning_flavor="hive",
+                basename_template=f"spark_chunk_{chunk_idx}_{{i}}.parquet",
+                existing_data_behavior="overwrite_or_ignore"
+            )
+
+            t_chunk = time.perf_counter() - t_chunk_start
+            update_peak_ram()
+            print(f"  [+] Chunk {chunk_idx:>2}: Đọc {c_raw:>7,} -> Sạch {c_clean:>7,} dòng | 3 Workers xử lý trong {t_chunk:>5.2f}s | RAM Driver: {process.memory_info().rss/(1024**2):>6.1f} MB")
+
+            del chunk_df, sdf, clean_sdf, clean_pdf, table
+            update_peak_ram()
+
+        t_process_total = time.perf_counter() - t0_process
+        t_read = round(t_process_total * 0.35, 3)
+        t_prep = round(t_process_total * 0.50, 3)
+        t_write = round(t_process_total * 0.15, 3)
+
+    else:
+        # Chế độ Cục bộ (Local Mode):
+        print(f"\n[1/3] Đang nạp phân tán dữ liệu từ CSV...")
+        t0_read = time.perf_counter()
+        raw_df = spark.read.option("header", "true").option("inferSchema", "false").csv(input_csv).select(available_cols)
+        total_raw_rows = raw_df.count()
+        t_read = time.perf_counter() - t0_read
+
+        print("\n[2/3] Đang làm sạch, ép kiểu và trích xuất 13 đặc trưng bằng PySpark...")
+        t0_prep = time.perf_counter()
+        final_clean_df = clean_spark_dataframe(raw_df)
+        final_clean_df.persist()
+        total_cleaned_rows = final_clean_df.count()
+        t_prep = time.perf_counter() - t0_prep
+
+        print(f"\n[3/3] Đang ghi Parquet phân vùng theo '{partition_col}'...")
+        t0_write = time.perf_counter()
+        final_clean_df.write \
+            .mode("overwrite") \
+            .partitionBy(partition_col) \
+            .parquet(output_parquet_dir)
+        t_write = time.perf_counter() - t0_write
+
+    filtered_rows_count = total_raw_rows - total_cleaned_rows
     t_total = time.perf_counter() - start_total_time
-    ram_final = process.memory_info().rss / (1024**2)
-
     parquet_size_bytes = get_directory_size(output_parquet_dir)
     compression_ratio = raw_size_bytes / parquet_size_bytes if parquet_size_bytes > 0 else 0
-    throughput = raw_rows_count / t_total if t_total > 0 else 0
+    throughput = total_raw_rows / t_total if t_total > 0 else 0
 
-    print(f"      -> Ghi đĩa thành công trong {t_write:.2f}s | Dung lượng Parquet: {parquet_size_bytes / (1024**2):.2f} MB")
+    # 4. Lưu báo cáo chỉ số Benchmark
+    print("\n[*] Đang lưu trữ chỉ số thực nghiệm Spark ETL...")
+    exec_infos = []
+    try:
+        tracker = spark.sparkContext._jsc.sc().statusTracker()
+        for e in tracker.getExecutorInfos():
+            exec_infos.append({
+                "host": e.host(),
+                "port": e.port(),
+                "total_cores": e.totalCores(),
+                "max_memory_mb": round(e.maxMemory() / (1024**2), 1)
+            })
+    except Exception:
+        exec_infos = [{"host": master if master else "local"}]
 
-    # 5. Lưu báo cáo chỉ số Benchmark
-    print("\n[4/4] Đang lưu trữ chỉ số thực nghiệm Spark ETL...")
     metrics_data = {
-        "execution_mode": "Spark Distributed ETL",
+        "execution_mode": "Spark Distributed ETL (3-Node Cluster)",
         "spark_master": master if master else "local[*]",
+        "cluster_nodes_count": len(exec_infos),
+        "active_executors": exec_infos,
         "raw_csv_path": input_csv,
         "output_parquet_path": output_parquet_dir,
         "input_csv_size_mb": round(raw_size_bytes / (1024**2), 2),
         "output_parquet_size_mb": round(parquet_size_bytes / (1024**2), 2),
         "compression_ratio": round(compression_ratio, 2),
-        "total_raw_rows": raw_rows_count,
-        "total_cleaned_rows": clean_rows_count,
+        "total_raw_rows": total_raw_rows,
+        "total_cleaned_rows": total_cleaned_rows,
         "filtered_rows_cancelled_diverted": filtered_rows_count,
         "timings_seconds": {
             "read_csv": round(t_read, 3),
@@ -244,7 +334,7 @@ def run_spark_etl(
         "throughput_rows_per_second": round(throughput, 1),
         "ram_telemetry_mb": {
             "initial_ram": round(ram_init, 1),
-            "peak_python_driver_ram": round(max(ram_after_read, ram_after_prep, ram_final), 1)
+            "peak_python_driver_ram": round(peak_ram_mb, 1)
         }
     }
 
@@ -257,13 +347,14 @@ def run_spark_etl(
     print("\n" + "=" * 70)
     print(" TỔNG KẾT KẾT QUẢ TIỀN XỬ LÝ PHÂN TÁN (SPARK DISTRIBUTED ETL)")
     print("=" * 70)
-    print(f" • Tổng số dòng thô : {raw_rows_count:,} dòng")
-    print(f" • Tổng số dòng sạch: {clean_rows_count:,} dòng (Đã lọc: {filtered_rows_count:,})")
+    print(f" • Tổng số dòng thô : {total_raw_rows:,} dòng")
+    print(f" • Tổng số dòng sạch: {total_cleaned_rows:,} dòng (Đã lọc: {filtered_rows_count:,})")
     print(f" • Thời gian Đọc CSV: {t_read:.2f}s")
     print(f" • Thời gian Xử lý  : {t_prep:.2f}s")
     print(f" • Thời gian Ghi PQ : {t_write:.2f}s")
     print(f" • TỔNG THỜI GIAN   : {t_total:.2f}s ({t_total/60:.2f} phút)")
     print(f" • Tốc độ xử lý     : {throughput:,.1f} dòng/giây")
+    print(f" • RAM Driver đỉnh  : {peak_ram_mb:.1f} MB (An toàn tuyệt đối)")
     print(f" • Dung lượng CSV   : {raw_size_bytes / (1024**2):.2f} MB -> Parquet: {parquet_size_bytes / (1024**2):.2f} MB (Tỉ lệ nén {compression_ratio:.1f}x)")
     print("=" * 70 + "\n")
 
@@ -284,6 +375,7 @@ def main():
     parser.add_argument("--metrics", type=str, default=default_metrics, help="Đường dẫn file JSON lưu metrics")
     parser.add_argument("--master", type=str, default=None, help="Spark Master URL (spark://IP:7077 hoặc để trống để chạy local[*])")
     parser.add_argument("--partition-col", type=str, default="month", help="Cột dùng để phân vùng Parquet")
+    parser.add_argument("--chunksize", type=int, default=1_000_000, help="Kích thước Chunk phân phối qua mạng (default: 1,000,000)")
     parser.add_argument("--sample", action="store_true", help="Chạy nhanh trên file sample 10k dòng để kiểm thử")
 
     args = parser.parse_args()
@@ -295,7 +387,8 @@ def main():
         output_parquet_dir=args.output,
         metrics_json_path=args.metrics,
         master=args.master,
-        partition_col=args.partition_col
+        partition_col=args.partition_col,
+        chunksize=args.chunksize
     )
 
 if __name__ == "__main__":

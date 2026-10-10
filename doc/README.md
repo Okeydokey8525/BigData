@@ -71,10 +71,10 @@ Các AI Agent khi tham gia dự án cần tra cứu các file chi tiết tương
 14. [`14_HUONG_DAN_TRIEN_KHAI_SPARK_CLUSTER_3_LAPTOP_TAILSCALE.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/14_HUONG_DAN_TRIEN_KHAI_SPARK_CLUSTER_3_LAPTOP_TAILSCALE.md): **[CẨM NANG CỤM 3 MÁY Ở NHÀ]** Hướng dẫn kết nối 3 laptop tại nhà riêng qua Tailscale Mesh VPN thành cụm Apache Spark phân tán thực thụ.
 15. [`15_BAO_CAO_TIEN_XU_LY_ALL_AT_ONCE_7M.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/15_BAO_CAO_TIEN_XU_LY_ALL_AT_ONCE_7M.md): **[BÁO CÁO NẠP 1 LẦN IN-MEMORY]** Chi tiết thực nghiệm nạp 1 lần 7.07M dòng theo ý Thầy (45.09s, RAM đỉnh 4.79 GB), giải mã tốc độ, phân tích nhiệt và bằng chứng số liệu.
 16. [`16_GIAI_DAP_THAC_MAC_BO_NHO_PHAN_CUNG_VA_TIEN_XU_LY.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/16_GIAI_DAP_THAC_MAC_BO_NHO_PHAN_CUNG_VA_TIEN_XU_LY.md): **[HỎI ĐÁP BỘ NHỚ & PHẦN CỨNG]** Giải mã chi tiết cơ chế Bit/Byte, sơ đồ dữ liệu, mức độ phụ thuộc phần cứng Lenovo LOQ, khả năng chạy trên máy bạn bè, giới hạn vật lý RAM và lý do bắt buộc chuyển sang cụm Spark 3 máy.
-
-
-
-
+17. [`17_BAO_CAO_TIEN_XU_LY_PHAN_TAN_SPARK_CLUSTER_3_LAPTOP.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/17_BAO_CAO_TIEN_XU_LY_PHAN_TAN_SPARK_CLUSTER_3_LAPTOP.md): **[BÁO CÁO SPARK CLUSTER 3 MÁY]** Báo cáo thực nghiệm tiền xử lý phân tán 100% dữ liệu (7.08M dòng) trên cụm 3 laptop Tailscale (296.30s, RAM Driver đỉnh 835.2 MB, nén 8.7x).
+18. [`18_KIEN_TRUC_END_TO_END_THUAN_SPARK_ETL_VA_MLLIB.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/18_KIEN_TRUC_END_TO_END_THUAN_SPARK_ETL_VA_MLLIB.md): **[KIẾN TRÚC TOÀN TRÌNH THUẦN SPARK]** Bản đặc tả và cẩm nang vận hành Pipeline Học máy Phân tán Toàn trình (End-to-End Spark Pipeline) chạy liền 1 mạch từ CSV thô 7.08M đến Spark MLlib Random Forest trên Cụm 3 Laptop.
+19. [`19_BAO_CAO_THUC_NGHIEM_END_TO_END_6_MO_HINH_SPARK_CLUSTER_3_LAPTOP.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/19_BAO_CAO_THUC_NGHIEM_END_TO_END_6_MO_HINH_SPARK_CLUSTER_3_LAPTOP.md): **[BÁO CÁO THỰC NGHIỆM END-TO-END 6 MÔ HÌNH SPARK 3 LAPTOP]** Báo cáo kết quả chạy toàn trình 100% 7.08 triệu dòng trên cụm 3 laptop (42 Cores CPU); đo 2 nhánh thời gian (Thuần Spark 2.47 phút vs Có trễ Wi-Fi 4.92 phút); đối sánh chi tiết 12 mô hình (6 đơn máy vs 6 Spark phân tán).
+20. [`20_TONG_HOP_SO_LIEU_VA_DANH_MUC_NOI_DUNG_VIET_BAO_CAO_DO_AN.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/20_TONG_HOP_SO_LIEU_VA_DANH_MUC_NOI_DUNG_VIET_BAO_CAO_DO_AN.md): **[CẨM NANG VIẾT BÁO CÁO ĐỒ ÁN 7 CHƯƠNG]** Tổng hợp toàn bộ số liệu đối sánh vàng (ETL & ML), danh mục 24 biểu đồ khoa học có sẵn để chèn vào Word và bộ câu hỏi phản biện bảo vệ đồ án.
 
 ---
 

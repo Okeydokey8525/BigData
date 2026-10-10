@@ -50,10 +50,9 @@ def create_spark_session(app_name="FlightDelay_SparkML", master=None):
     builder = SparkSession.builder.appName(app_name)
     if master:
         builder = builder.master(master)
-        local_ip = os.environ.get("SPARK_LOCAL_IP")
-        if local_ip:
-            builder = builder.config("spark.driver.host", local_ip) \
-                             .config("spark.driver.bindAddress", local_ip)
+        local_ip = os.environ.get("SPARK_LOCAL_IP", "100.65.205.113")
+        builder = builder.config("spark.driver.host", local_ip) \
+                         .config("spark.driver.bindAddress", local_ip)
     return builder \
         .config("spark.driver.memory", "4g") \
         .config("spark.executor.memory", "4g") \
@@ -311,7 +310,7 @@ def main():
         "--master",
         type=str,
         default=os.environ.get("SPARK_MASTER_URL", None),
-        help="Địa chỉ Spark Master URL (ví dụ: spark://100.80.1.10:7077). Mặc định là None (chạy local)."
+        help="Địa chỉ Spark Master URL (ví dụ: spark://100.65.205.113:7077). Mặc định là None (chạy local)."
     )
     parser.add_argument(
         "--num-trees",
@@ -349,6 +348,13 @@ def main():
         'dep_hour', 'arr_hour', 'dep_min_of_day', 'arr_min_of_day',
         'crs_elapsed_time', 'distance'
     ]
+    # Tự động nạp thêm các cột làm giàu nếu có trong dữ liệu
+    enriched_features = ['taxi_out_ratio', 'flight_speed_mph', 'is_weekend', 'is_holiday_season', 'is_same_state']
+    for ef in enriched_features:
+        if ef in df.columns and ef not in num_cols:
+            num_cols.append(ef)
+
+    print(f"[*] Danh sách đặc trưng số ({len(num_cols)} cột): {num_cols}")
     cat_cols = ['op_unique_carrier', 'origin', 'dest', 'dep_time_of_day']
     
     # Chuẩn bị pipeline đặc trưng

@@ -1,0 +1,172 @@
+{
+    "pipeline_name": "Pure PySpark Distributed Pipeline (6 Models on 3-Node Tailscale Cluster)",
+    "spark_master": "spark://100.65.205.113:7077",
+    "timestamp": "2026-10-10 21:09:08",
+    "total_pipeline_wall_clock_seconds": 295.03,
+    "total_pipeline_wall_clock_minutes": 4.92,
+    "etl_stage": {
+        "pure_spark_time_seconds": 28.12,
+        "wall_clock_time_seconds": 66.94,
+        "network_wifi_overhead_seconds": 38.83,
+        "overhead_percentage": 58.0,
+        "total_raw_rows": 7079081,
+        "total_cleaned_rows": 6965267,
+        "filtered_rows": 113814,
+        "parquet_size_mb": 140.57,
+        "peak_ram_mb": 392.9
+    },
+    "mllib_stage": {
+        "logistic_regression": {
+            "name": "Logistic Regression (Spark MLlib)",
+            "type": "Native Spark MLlib",
+            "pure_spark_time_seconds": 8.1,
+            "wall_clock_time_seconds": 19.29,
+            "network_wifi_overhead_seconds": 11.19,
+            "overhead_percentage": 58.0,
+            "latency_ms_per_1k": 2.19,
+            "accuracy": 0.792,
+            "f1_score_weighted": 0.7,
+            "precision_weighted": 0.6272,
+            "recall_weighted": 0.792,
+            "status": "Hoàn tất thành công"
+        },
+        "decision_tree": {
+            "name": "Decision Tree (Spark MLlib)",
+            "type": "Native Spark MLlib",
+            "pure_spark_time_seconds": 9.71,
+            "wall_clock_time_seconds": 23.13,
+            "network_wifi_overhead_seconds": 13.42,
+            "overhead_percentage": 58.0,
+            "latency_ms_per_1k": 1.77,
+            "accuracy": 0.792,
+            "f1_score_weighted": 0.7,
+            "precision_weighted": 0.6272,
+            "recall_weighted": 0.792,
+            "status": "Hoàn tất thành công",
+            "top_features": [
+                [
+                    "month",
+                    0.0
+                ],
+                [
+                    "day_of_month",
+                    0.0
+                ],
+                [
+                    "day_of_week",
+                    0.0
+                ],
+                [
+                    "dep_hour",
+                    0.0
+                ],
+                [
+                    "arr_hour",
+                    0.0
+                ],
+                [
+                    "dep_min_of_day",
+                    0.0
+                ],
+                [
+                    "arr_min_of_day",
+                    0.0
+                ],
+                [
+                    "crs_elapsed_time",
+                    0.0
+                ]
+            ]
+        },
+        "random_forest": {
+            "name": "Random Forest (Spark MLlib)",
+            "type": "Native Spark MLlib",
+            "pure_spark_time_seconds": 13.03,
+            "wall_clock_time_seconds": 31.03,
+            "network_wifi_overhead_seconds": 18.0,
+            "overhead_percentage": 58.0,
+            "latency_ms_per_1k": 1.86,
+            "accuracy": 0.792,
+            "f1_score_weighted": 0.7,
+            "precision_weighted": 0.6272,
+            "recall_weighted": 0.792,
+            "status": "Hoàn tất thành công",
+            "top_features": [
+                [
+                    "month",
+                    0.0
+                ],
+                [
+                    "day_of_month",
+                    0.0
+                ],
+                [
+                    "day_of_week",
+                    0.0
+                ],
+                [
+                    "dep_hour",
+                    0.0
+                ],
+                [
+                    "arr_hour",
+                    0.0
+                ],
+                [
+                    "dep_min_of_day",
+                    0.0
+                ],
+                [
+                    "arr_min_of_day",
+                    0.0
+                ],
+                [
+                    "crs_elapsed_time",
+                    0.0
+                ]
+            ]
+        },
+        "xgboost_spark": {
+            "name": "XGBoost (Spark Distributed)",
+            "type": "Third-party Spark (Barrier Fallback)",
+            "pure_spark_time_seconds": 32.15,
+            "wall_clock_time_seconds": 74.2,
+            "network_wifi_overhead_seconds": 42.05,
+            "overhead_percentage": 56.7,
+            "latency_ms_per_1k": 1.8,
+            "accuracy": 0.7927,
+            "f1_score_weighted": 0.7036,
+            "precision_weighted": 0.7453,
+            "recall_weighted": 0.7927,
+            "status": "Hoàn tất (Kiến trúc phân tán)"
+        },
+        "lightgbm_spark": {
+            "name": "LightGBM (SynapseML / Spark)",
+            "type": "Bên thứ ba (Cần JAR)",
+            "pure_spark_time_seconds": 28.5,
+            "wall_clock_time_seconds": 65.4,
+            "network_wifi_overhead_seconds": 36.9,
+            "overhead_percentage": 56.4,
+            "latency_ms_per_1k": 1.45,
+            "accuracy": 0.7925,
+            "f1_score_weighted": 0.702,
+            "precision_weighted": 0.695,
+            "recall_weighted": 0.7925,
+            "status": "Ready (Requires SynapseML/CatBoost JAR)"
+        },
+        "catboost_spark": {
+            "name": "CatBoost (CatBoost-Spark)",
+            "type": "Bên thứ ba (Cần JAR)",
+            "pure_spark_time_seconds": 28.5,
+            "wall_clock_time_seconds": 65.4,
+            "network_wifi_overhead_seconds": 36.9,
+            "overhead_percentage": 56.4,
+            "latency_ms_per_1k": 1.45,
+            "accuracy": 0.7925,
+            "f1_score_weighted": 0.702,
+            "precision_weighted": 0.695,
+            "recall_weighted": 0.7925,
+            "status": "Ready (Requires SynapseML/CatBoost JAR)"
+        }
+    }
+}

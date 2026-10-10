@@ -16,9 +16,9 @@ Khi làm việc tại nhà riêng, router WiFi gia đình cấp cho mỗi laptop
 ```mermaid
 graph TD
     subgraph "MẠNG TAILSCALE NỘI BỘ ẢO (P2P ENCRYPTED)"
-        L["MÁY LƯƠNG (SPARK MASTER)<br>IP Tailscale: 100.80.x.1<br>AMD Ryzen 7 - 16 Threads - 16GB RAM"]
-        A["MÁY AN (SPARK WORKER 1)<br>IP Tailscale: 100.80.x.2<br>CPU & RAM Máy An"]
-        TA["MÁY TUẤN ANH (SPARK WORKER 2)<br>IP Tailscale: 100.80.x.3<br>CPU & RAM Máy Tuấn Anh"]
+        L["MÁY LƯƠNG (SPARK MASTER)<br>IP Tailscale: 100.65.205.113<br>Lenovo LOQ - AMD Ryzen 7 - 16 Threads - 16GB RAM"]
+        A["MÁY AN (SPARK WORKER 1)<br>IP Tailscale: 100.74.10.115<br>CPU & RAM Máy An"]
+        TA["MÁY TUẤN ANH (SPARK WORKER 2)<br>IP Tailscale: 100.112.107.123<br>CPU & RAM Máy Tuấn Anh"]
 
         L <== "Port 7077 (RPC) & 8080 (Web UI)" ==> A
         L <== "Port 7077 (RPC) & 8080 (Web UI)" ==> TA
@@ -44,11 +44,11 @@ graph TD
 ### 3. Ghi lại bảng phân bổ IP Tailscale của nhóm:
 *(Mỗi bạn mở bảng điều khiển Tailscale và ghi nhận IP của mình vào nhóm Zalo)*:
 
-| Thành viên | Vai trò trong cụm Spark | Địa chỉ IP Tailscale (Ví dụ) | Cổng lắng nghe (Ports) |
+| Thành viên | Vai trò trong cụm Spark | Địa chỉ IP Tailscale (Thật) | Cổng lắng nghe (Ports) |
 | :--- | :--- | :---: | :--- |
-| **Lê Đức Lương** | **Spark Master** (+ Tùy chọn Worker 0) | `100.80.1.10` | `7077` (Master), `8080` (Web UI), `4040` (Job UI) |
-| **Cù Văn Vĩ An** | **Spark Worker 1** | `100.80.1.20` | `8081` (Worker Web UI), `7078-7090` (BlockManager) |
-| **Trần Huỳnh Tuấn Anh** | **Spark Worker 2** | `100.80.1.30` | `8081` (Worker Web UI), `7078-7090` (BlockManager) |
+| **Lê Đức Lương** | **Spark Master** (+ Tùy chọn Worker 0) | `100.65.205.113` | `7077` (Master), `8080` (Web UI), `4040` (Job UI) |
+| **Cù Văn Vĩ An** | **Spark Worker 1** | `100.74.10.115` | `8081` (Worker Web UI), `7078-7090` (BlockManager) |
+| **Trần Huỳnh Tuấn Anh** | **Spark Worker 2** | `100.112.107.123` | `8081` (Worker Web UI), `7078-7090` (BlockManager) |
 
 ---
 
@@ -75,12 +75,12 @@ netsh advfirewall firewall add rule name="Spark Cluster Ports" dir=in action=all
 Sau khi đã bật Tailscale và mở tường lửa:
 * **Tại máy của An:** Mở PowerShell gõ:
   ```powershell
-  ping 100.80.1.10
+  ping 100.65.205.113
   ```
-  *(Thay `100.80.1.10` bằng IP Tailscale thật của máy Lương)*.
+  *(Ping trực tiếp sang máy Lương qua mạng Tailscale)*.
   * **Kết quả đạt chuẩn:** Xuất hiện các dòng:
-    `Reply from 100.80.1.10: bytes=32 time=15ms TTL=128`
-* **Tại máy của Tuấn Anh:** Ping kiểm tra sang cả Lương và An.
+    `Reply from 100.65.205.113: bytes=32 time=15ms TTL=128`
+* **Tại máy của Tuấn Anh:** Ping kiểm tra sang cả Lương (`100.65.205.113`) và An (`100.74.10.115`).
 * Khi cả 3 máy ping qua lại đều có `Reply` và thời gian phản hồi `< 30ms`, mạng ảo đã sẵn sàng 100%.
 
 ---
@@ -95,15 +95,15 @@ Sau khi đã bật Tailscale và mở tường lửa:
 
 * **Trên máy Lương:**
   ```powershell
-  $env:SPARK_LOCAL_IP = "100.80.1.10"
+  $env:SPARK_LOCAL_IP = "100.65.205.113"
   ```
 * **Trên máy An:**
   ```powershell
-  $env:SPARK_LOCAL_IP = "100.80.1.20"
+  $env:SPARK_LOCAL_IP = "100.74.10.115"
   ```
 * **Trên máy Tuấn Anh:**
   ```powershell
-  $env:SPARK_LOCAL_IP = "100.80.1.30"
+  $env:SPARK_LOCAL_IP = "100.112.107.123"
   ```
 
 ---
@@ -114,17 +114,17 @@ Sau khi đã bật Tailscale và mở tường lửa:
 Trong thư mục gốc dự án hoặc thư mục cài đặt Spark, mở PowerShell và chạy:
 
 ```powershell
-# Gán IP Tailscale
-$env:SPARK_LOCAL_IP = "100.80.1.10"
+# Gán IP Tailscale của máy Lương
+$env:SPARK_LOCAL_IP = "100.65.205.113"
 
 # Khởi chạy tiến trình Master
-spark-class org.apache.spark.deploy.master.Master -h 100.80.1.10 -p 7077 --webui-port 8080
+spark-class org.apache.spark.deploy.master.Master -h 100.65.205.113 -p 7077 --webui-port 8080
 ```
 
 * **Kiểm tra:**
-  * Mở trình duyệt Web trên máy Lương: `http://localhost:8080` (hoặc `http://100.80.1.10:8080`).
-  * Giao diện **Spark Master at spark://100.80.1.10:7077** sẽ xuất hiện.
-  * Đồng thời, bạn An và bạn Tuấn Anh ở nhà riêng cũng mở trình duyệt và gõ `http://100.80.1.10:8080` $\to$ **Nếu xem được giao diện Master của Lương là đã thành công kết nối!**
+  * Mở trình duyệt Web trên máy Lương: `http://localhost:8080` (hoặc `http://100.65.205.113:8080`).
+  * Giao diện **Spark Master at spark://100.65.205.113:7077** sẽ xuất hiện.
+  * Đồng thời, bạn An và bạn Tuấn Anh ở nhà riêng cũng mở trình duyệt và gõ `http://100.65.205.113:8080` $\to$ **Nếu xem được giao diện Master của Lương là đã thành công kết nối!**
 
 ---
 
@@ -133,10 +133,10 @@ Bạn An mở PowerShell trên máy mình và chạy:
 
 ```powershell
 # Gán IP Tailscale của máy An
-$env:SPARK_LOCAL_IP = "100.80.1.20"
+$env:SPARK_LOCAL_IP = "100.74.10.115"
 
 # Kết nối vào Master của Lương
-spark-class org.apache.spark.deploy.worker.Worker spark://100.80.1.10:7077 -h 100.80.1.20 --webui-port 8081
+spark-class org.apache.spark.deploy.worker.Worker spark://100.65.205.113:7077 -h 100.74.10.115 --webui-port 8081
 ```
 
 ---
@@ -146,22 +146,22 @@ Bạn Tuấn Anh mở PowerShell trên máy mình và chạy:
 
 ```powershell
 # Gán IP Tailscale của máy Tuấn Anh
-$env:SPARK_LOCAL_IP = "100.80.1.30"
+$env:SPARK_LOCAL_IP = "100.112.107.123"
 
 # Kết nối vào Master của Lương
-spark-class org.apache.spark.deploy.worker.Worker spark://100.80.1.10:7077 -h 100.80.1.30 --webui-port 8081
+spark-class org.apache.spark.deploy.worker.Worker spark://100.65.205.113:7077 -h 100.112.107.123 --webui-port 8081
 ```
 
 ---
 
 ### 6.4. Xác nhận Cụm 3 Node trên giao diện Web UI
-Sau khi An và Tuấn Anh chạy lệnh, nhìn lại màn hình Web UI `http://100.80.1.10:8080` của Lương:
+Sau khi An và Tuấn Anh chạy lệnh, nhìn lại màn hình Web UI `http://100.65.205.113:8080` của Lương:
 * Mục **Workers** sẽ lập tức hiện 2 dòng:
-  * `worker-...-100.80.1.20:xxxx` (Trạng thái: **ALIVE**, Cores: máy An, RAM: máy An)
-  * `worker-...-100.80.1.30:xxxx` (Trạng thái: **ALIVE**, Cores: máy Tuấn Anh, RAM: máy Tuấn Anh)
+  * `worker-...-100.74.10.115:xxxx` (Trạng thái: **ALIVE**, Cores: máy An, RAM: máy An)
+  * `worker-...-100.112.107.123:xxxx` (Trạng thái: **ALIVE**, Cores: máy Tuấn Anh, RAM: máy Tuấn Anh)
 * Tổng tài nguyên của cụm lúc này là sự cộng gộp sức mạnh CPU và RAM của các máy!
 
-*(Nếu Lương muốn máy mình cũng tham gia làm Worker tính toán, mở thêm 1 tab terminal khác trên máy Lương và gõ: `spark-class org.apache.spark.deploy.worker.Worker spark://100.80.1.10:7077 -h 100.80.1.10 --webui-port 8082` $\to$ Cụm sẽ có đủ 3 Workers!)*
+*(Nếu Lương muốn máy mình cũng tham gia làm Worker tính toán, mở thêm 1 tab terminal khác trên máy Lương và gõ: `spark-class org.apache.spark.deploy.worker.Worker spark://100.65.205.113:7077 -h 100.65.205.113 --webui-port 8082` $\to$ Cụm sẽ có đủ 3 Workers!)*
 
 ---
 
@@ -180,39 +180,26 @@ Tệp dữ liệu sạch sau khi tiền xử lý là:
 
 ---
 
-## 8. BƯỚC 7: THỰC THI HUẤN LUYỆN SPARK MLLIB TRÊN CỤM (SUBMIT JOB)
+## 8. BƯỚC 7: THỰC THI TIỀN XỬ LÝ & HUẤN LUYỆN SPARK TRÊN CỤM 3 MÁY (SUBMIT JOB)
 
-Tại máy của Lương (hoặc bất kỳ máy nào trong nhóm), viết một script Python kết nối tới Master `spark://100.80.1.10:7077`:
+### 8.1. Thực thi Tiền xử lý Dữ liệu lớn Phân tán (Distributed Spark ETL 100% Dữ liệu 2024):
+Chạy script ETL phân tán trực tiếp trên toàn bộ 7,079,081 dòng CSV để 3 Workers lọc sạch, trích xuất đặc trưng và nén Parquet:
 
-```python
-import os
-import sys
-from pyspark.sql import SparkSession
-from pyspark.ml.classification import RandomForestClassifier
-from pyspark.ml.evaluation import MulticlassClassificationEvaluator
+```powershell
+# Chạy từ thư mục gốc của đồ án
+venv\Scripts\python.exe src/etl/spark_etl.py --master spark://100.65.205.113:7077
+```
+> [!NOTE]
+> Kết quả chi tiết và phân tích đối sánh 100% của tác vụ này được lưu tại: [`doc/17_BAO_CAO_TIEN_XU_LY_PHAN_TAN_SPARK_CLUSTER_3_LAPTOP.md`](file:///c:/LeDucLuong/HK%20VII/NhapMonBigData/DoAn/doc/17_BAO_CAO_TIEN_XU_LY_PHAN_TAN_SPARK_CLUSTER_3_LAPTOP.md)  
+> * Thời gian xử lý: **296.30s (~4.94 phút)** trên 7,079,081 dòng thô $\to$ 6,965,267 dòng sạch.  
+> * RAM Driver đỉnh: **835.2 MB** (tiết kiệm 82.6% RAM so với chạy thuần).  
+> * Tệp kết quả: `Flight Delay Dataset — 2024/cleaned_spark_data.parquet` (143 MB, nén 8.7x).
 
-# Bắt buộc đặt IP Driver là IP Tailscale của máy phát lệnh
-os.environ["SPARK_LOCAL_IP"] = "100.80.1.10"
+### 8.2. Thực thi Huấn luyện Phân tán Spark MLlib Random Forest trên Cụm:
+Chạy script MLlib đọc trực tiếp tệp Parquet đã phân vùng để huấn luyện mô hình phân loại nguyên nhân trễ trên cả 3 máy:
 
-# Khởi tạo Spark Session trỏ tới Master 3 máy
-spark = SparkSession.builder \
-    .appName("FlightDelay_3Node_Cluster_7M") \
-    .master("spark://100.80.1.10:7077") \
-    .config("spark.driver.host", "100.80.1.10") \
-    .config("spark.driver.bindAddress", "100.80.1.10") \
-    .config("spark.executor.memory", "3g") \
-    .config("spark.executor.cores", "4") \
-    .getOrCreate()
-
-print(">>> [SUCCESS] Da ket noi thanh cong vao Cum Spark 3 Node!")
-print(f">>> Spark Master Web UI: {spark.sparkContext.uiWebUrl}")
-
-# Đọc dữ liệu Parquet phân vùng
-data_path = "Flight Delay Dataset — 2024/cleaned_flight_data_2024.parquet"
-df = spark.read.parquet(data_path)
-print(f">>> Tong so dong du lieu: {df.count():,}")
-
-# Các bước huấn luyện Spark MLlib tiếp theo...
+```powershell
+venv\Scripts\python.exe src/spark_ml/pipeline.py --master spark://100.65.205.113:7077 --data "Flight Delay Dataset — 2024/cleaned_spark_data.parquet"
 ```
 
 ---
@@ -221,9 +208,10 @@ print(f">>> Tong so dong du lieu: {df.count():,}")
 
 Khi cụm đang chạy, các bạn cần chụp 4 bức ảnh đắt giá nhất để đưa vào file báo cáo Word và slide thuyết trình:
 
-1. **Ảnh 1 - Cụm đa máy vật lý:** Chụp trang chủ Spark Web UI (`http://100.80.1.10:8080`) thấy rõ danh sách các Workers mang 3 địa chỉ IP Tailscale khác nhau (`100.80.x.10`, `100.80.x.20`, `100.80.x.30`), tổng Cores và RAM cộng dồn.
-2. **Ảnh 2 - Spark Application DAG:** Mở tab **Jobs** $\to$ click vào Job đang chạy để chụp sơ đồ Directed Acyclic Graph (DAG) phân rã thành các Stages.
+1. **Ảnh 1 - Cụm đa máy vật lý:** Chụp trang chủ Spark Web UI (`http://100.65.205.113:8080`) thấy rõ danh sách các Workers mang 3 địa chỉ IP Tailscale khác nhau (`100.65.205.113`, `100.74.10.115`, `100.112.107.123`), tổng Cores và RAM cộng dồn.
+2. **Ảnh 2 - Spark Application DAG:** Mở tab **Jobs** $\to$ click vào Job đang chạy (`FlightDelay_SparkETL` hoặc `FlightDelay_SparkMLlib`) để chụp sơ đồ Directed Acyclic Graph (DAG) phân rã thành các Stages.
 3. **Ảnh 3 - Phân bổ Tasks (Event Timeline):** Chụp biểu đồ Event Timeline thể hiện các tác vụ (Tasks) được chia đều đồng thời cho các Executor ở cả 3 máy tính.
 4. **Ảnh 4 - Màn hình Tailscale Admin Console:** Chụp danh sách 3 thiết bị Laptop của 3 thành viên đang ở trạng thái **Connected**.
 
 Bộ minh chứng này sẽ khẳng định 100% đồ án của nhóm là **Hệ thống Dữ liệu lớn phân tán thực thụ**, đáp ứng chuẩn mực cao nhất của học phần Big Data!
+

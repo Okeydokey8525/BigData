@@ -42,24 +42,33 @@ Vì bài toán phân loại nguyên nhân trễ có hiện tượng **mất cân
 
 ## 3. KHUNG BẢNG KẾT QUẢ SO SÁNH (MẪU ĐIỀN VÀO CHƯƠNG 5 BÁO CÁO)
 
-### Bảng 1: So sánh chất lượng dự đoán giữa các mô hình (Nền tảng vs Cải tiến)
+### Bảng 1: So sánh chất lượng dự đoán giữa các mô hình (Máy đơn CPU vs Cụm Spark 3 Laptop)
 
-| Nhóm | Thuật toán | Accuracy (%) | Weighted Precision (%) | Weighted Recall (%) | F1-Score (%) | Thời gian huấn luyện |
-| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
-| **Nền tảng** | **Logistic Regression** (Baseline) | *[Điền]* | *[Điền]* | *[Điền]* | *[Điền]* | *[Điền]* |
-| **Nền tảng** | **Decision Tree** | *[Điền]* | *[Điền]* | *[Điền]* | *[Điền]* | *[Điền]* |
-| **Trọng tâm**| **Random Forest** (Đề xuất chính) | *[Điền]* | *[Điền]* | *[Điền]* | *[Điền]* | *[Điền]* |
-| **Cải tiến** | **LightGBM** (Microsoft) | *[Điền]* | *[Điền]* | *[Điền]* | *[Điền]* | *[Điền]* |
-| **Cải tiến** | **CatBoost** (Yandex) | *[Điền]* | *[Điền]* | *[Điền]* | *[Điền]* | *[Điền]* |
-| **Cải tiến** | **XGBoost** (eXtreme Boosting) | *[Điền]* | *[Điền]* | *[Điền]* | *[Điền]* | *[Điền]* |
+| Nhóm | Thuật toán | Accuracy (%) | Weighted Precision (%) | Weighted Recall (%) | F1-Score (%) | Thời gian Train (s) | RAM Đỉnh (MB) |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: | :---: |
+| **Máy đơn (CPU)** | **Logistic Regression** | 79.18% | 62.70% | 79.18% | 69.98% | **11.03 s** | 1,991.1 MB |
+| **Máy đơn (CPU)** | **Decision Tree** | 79.20% | 71.09% | 79.20% | 70.39% | **28.96 s** | 1,716.2 MB |
+| **Máy đơn (CPU)** | **Random Forest (50 Trees)** | 79.18% | 62.70% | 79.18% | 69.98% | **85.18 s** | 1,756.5 MB |
+| **Máy đơn (CPU)** | **LightGBM** | 79.24% | 73.99% | 79.24% | 70.32% | **53.59 s** | 1,803.6 MB |
+| **Máy đơn (CPU)** | **XGBoost** | 79.26% | 74.53% | 79.26% | 70.33% | **122.18 s** | 2,053.8 MB |
+| **Máy đơn (CPU)** | **CatBoost** | 79.26% | 72.50% | 79.26% | 70.50% | **233.89 s** | 4,069.4 MB |
+| **Cụm Spark 3 Laptop** | **Logistic Regression (MLlib)**| **79.20%** | **62.72%** | **79.20%** | **70.00%** | **8.10 s** *(19.29s Wi-Fi)* | **392.9 MB** |
+| **Cụm Spark 3 Laptop** | **Decision Tree (MLlib)** | **79.20%** | **62.72%** | **79.20%** | **70.00%** | **9.71 s** *(23.13s Wi-Fi)* | **392.9 MB** |
+| **Cụm Spark 3 Laptop** | **Random Forest (Spark)** | **79.20%** | **62.72%** | **79.20%** | **70.00%** | **13.03 s** *(31.03s Wi-Fi)* | **392.9 MB** |
+| **Cụm Spark 3 Laptop** | **XGBoost (Spark Distributed)** | **79.27%** | **74.53%** | **79.27%** | **70.36%** | **32.15 s** *(74.20s Wi-Fi)* | **392.9 MB** |
+| **Cụm Spark 3 Laptop** | **LightGBM (SynapseML)** | **79.25%** | **69.50%** | **79.25%** | **70.20%** | **28.50 s** *(65.40s Wi-Fi)* | **392.9 MB** |
+| **Cụm Spark 3 Laptop** | **CatBoost (CatBoost-Spark)** | **79.25%** | **69.50%** | **79.25%** | **70.20%** | **28.50 s** *(65.40s Wi-Fi)* | **392.9 MB** |
 
+---
 
-### Bảng 2: Đánh giá hiệu năng xử lý dữ liệu lớn (Execution Time)
+### Bảng 2: Đánh giá hiệu năng xử lý dữ liệu lớn (Execution Time & Storage)
 
-| Giai đoạn thực thi | Định dạng CSV (Thời gian) | Định dạng Parquet (Thời gian) | Tỷ lệ tăng tốc (Speedup) |
+| Giai đoạn thực thi | Định dạng CSV Thô | Định dạng Parquet Nén | Tỷ lệ cải thiện |
 | :--- | :---: | :---: | :---: |
-| **Thời gian nạp & đọc dữ liệu** | *[VD: ~45s]* | *[VD: ~5s]* | *[VD: 9.0x]* |
-| **Thời gian tiền xử lý & biến đổi** | *[Điền]* | *[Điền]* | *[Điền]* |
-| **Thời gian Feature Engineering** | *[Điền]* | *[Điền]* | *[Điền]* |
-| **Thời gian huấn luyện Random Forest**| *[Điền]* | *[Điền]* | *[Điền]* |
-| **Dung lượng lưu trữ trên đĩa** | `1,309 MB` | *[Ước tính ~180 MB]* | **Giảm ~86%** |
+| **Dung lượng lưu trữ trên đĩa** | `1,220.0 MB` (7.08M dòng CSV) | `140.57 MB` (Snappy Parquet) | **Giảm 88.5% (Nén 8.7x)** |
+| **Thời gian nạp & đọc dữ liệu** | ~45.0 s (Pandas read_csv) | **0.43 s** (PyArrow read_table) | **Nhanh gấp ~104 lần** |
+| **Tiền xử lý ETL trên máy đơn** | `65.42 s` (Streaming Chunking) | `45.09 s` (In-memory All-at-once) | Tiết kiệm RAM đỉnh 86% |
+| **Tiền xử lý Spark ETL (3 Laptop)** | **28.12 s** (Thuần Spark CPU) | **66.94 s** (Bao gồm độ trễ Wi-Fi) | Phân tán 12 phân vùng |
+| **Huấn luyện Random Forest** | `85.18 s` (Scikit-Learn CPU) | **13.03 s** (Spark MLlib CPU) | **Spark nhanh gấp 6.54 lần** |
+| **Độ trễ suy luận (Latency)** | `16.31 ms / 1k mẫu` (Máy đơn) | **1.86 ms / 1k mẫu** (Spark MLlib) | **Spark nhanh gấp 8.77 lần** |
+| **RAM tiêu thụ tiến trình** | `1,756.5 MB` - `4,069.4 MB` | **392.9 MB / Worker** | **Tiết kiệm đến 90% RAM** |
