@@ -17,6 +17,7 @@ data_processed/
 # 2. PYTHON VIRTUAL ENVIRONMENT & CACHE
 venv/
 .venv/
+scripts/linux/cluster.env
 env/
 __pycache__/
 *.py[cod]
@@ -47,3 +48,4 @@ models/
 .DS_Store
 Thumbs.db
 Desktop.ini
+docker/spark/.env

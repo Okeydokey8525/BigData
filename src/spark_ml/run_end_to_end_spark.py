@@ -1,19 +1,8 @@
-"""
-Pipeline Toàn Trình Thuần PySpark Phân Tán (Pure PySpark End-to-End Pipeline)
-=============================================================================
-Thực thi toàn bộ quy trình Big Data thuần túy trên Apache Spark (Cụm 3 Laptop qua Tailscale):
-  [Giai đoạn 1] Thuần PySpark Distributed ETL: Đọc CSV trực tiếp bằng Spark Engine,
-                lọc sạch 7.08M dòng trên JVM của các Worker, ghi Parquet phân vùng.
-  [Giai đoạn 2] Thuần PySpark Feature Pipeline: StringIndexer + VectorAssembler trực tiếp trên Spark DataFrame.
-  [Giai đoạn 3] Huấn luyện phân tán trọn vẹn 6 MÔ HÌNH HỌC MÁY:
-                - 3 Mô hình Chính chủ Spark MLlib: Logistic Regression, Decision Tree, Random Forest.
-                - 3 Mô hình Bên thứ ba hỗ trợ Spark: XGBoost on Spark, LightGBM on Spark, CatBoost on Spark.
-  [Giai đoạn 4] Đo lường thời gian theo 2 NHÁNH ĐỘC LẬP:
-                - Nhánh 1: Thời gian Thuần Tính Toán Spark Engine (Pure Spark Computation Time).
-                - Nhánh 2: Thời gian Toàn Trình thực tế gồm cả mạng WiFi & Tailscale VPN (Wall-Clock Real Time).
+"""Train and evaluate five PySpark models from preprocessed Parquet.
 
-Tác giả: Nhóm 6 - Nhập môn Big Data (HUIT)
-Giảng viên hướng dẫn: TS. Phan Hồ Viết Trường
+Default: reuse cleaned Parquet, with requests for three executors.
+Use --run-etl explicitly to preprocess CSV before training.
+Only measured training/evaluation results are recorded.
 """
 
 import os
@@ -24,6 +13,10 @@ import json
 import psutil
 import gc
 import argparse
+import importlib
+import traceback
+import hashlib
+from datetime import datetime
 from pathlib import Path
 
 # Thiết lập UTF-8 cho Windows console
@@ -34,10 +27,10 @@ if sys.stderr.encoding != 'utf-8':
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 hadoop_dir = BASE_DIR / "hadoop"
-if hadoop_dir.exists():
+if os.name == "nt" and hadoop_dir.exists():
     os.environ["HADOOP_HOME"] = str(hadoop_dir)
     os.environ["hadoop.home.dir"] = str(hadoop_dir)
-    os.environ["PATH"] = str(hadoop_dir / "bin") + ";" + os.environ.get("PATH", "")
+    os.environ["PATH"] = str(hadoop_dir / "bin") + os.pathsep + os.environ.get("PATH", "")
 
 import numpy as np
 import pandas as pd
@@ -54,25 +47,7 @@ from pyspark.ml.classification import (
 )
 from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 
-# Thư viện bên thứ ba hỗ trợ Spark phân tán
-try:
-    from xgboost.spark import SparkXGBClassifier
-    HAS_XGBOOST_SPARK = True
-except ImportError:
-    HAS_XGBOOST_SPARK = False
-
-try:
-    from synapse.ml.lightgbm import LightGBMClassifier as SynapseLightGBM
-    HAS_SYNAPSE_LIGHTGBM = True
-except ImportError:
-    HAS_SYNAPSE_LIGHTGBM = False
-
-try:
-    import catboost_spark
-    HAS_CATBOOST_SPARK = True
-except ImportError:
-    HAS_CATBOOST_SPARK = False
-
+# Third-party wrappers are imported by require_training_dependencies after session setup.
 # Cấu hình các đường dẫn mặc định an toàn chuẩn ASCII
 RAW_CSV_PATH = BASE_DIR / "data" / "flight_data_2024.csv"
 CLEAN_PARQUET_DIR = BASE_DIR / "data" / "cleaned_flight_data_2024.parquet"
@@ -91,6 +66,33 @@ REQUIRED_COLUMNS = [
 TARGET_NAMES = ['OnTime', 'Carrier', 'Weather', 'NAS', 'Security', 'LateAircraft']
 
 
+def macro_f1_from_counts(matrix):
+    scores = []
+    for i in range(len(matrix)):
+        denominator = sum(matrix[i]) + sum(row[i] for row in matrix)
+        scores.append(2 * matrix[i][i] / denominator if denominator else 0.0)
+    return sum(scores) / len(scores) if scores else 0.0
+
+
+def require_training_dependencies(spark):
+    """Resolve Python wrappers after Spark adds configured py-files."""
+    global SparkXGBClassifier, SynapseLightGBM
+    errors = []
+    for module, attribute, binding in [
+        ("xgboost.spark", "SparkXGBClassifier", "SparkXGBClassifier"),
+        ("synapse.ml.lightgbm", "LightGBMClassifier", "SynapseLightGBM"),
+    ]:
+        try:
+            imported = importlib.import_module(module)
+            globals()[binding] = getattr(imported, attribute) if attribute else imported
+        except Exception as exc:
+            errors.append(f"{module}: {type(exc).__name__}: {exc}")
+    if errors:
+        raise RuntimeError("Cannot train all five Spark models:\n" + "\n".join(errors))
+    # Validate JVM wrappers before processing the full dataset.
+    SynapseLightGBM()
+
+
 def get_process_ram_mb():
     try:
         p = psutil.Process()
@@ -99,21 +101,58 @@ def get_process_ram_mb():
         return 0.0
 
 
+def synapseml_coordinate(spark_version):
+    """Match the Scala ABI; Spark 4.2 uses the latest 4.1 build with a warning."""
+    runtime = tuple(int(part) for part in spark_version.split('.')[:2])
+    if runtime == (3, 5):
+        return "com.microsoft.azure:synapseml-lightgbm_2.12:1.0.15"
+    if runtime in [(4, 0), (4, 1), (4, 2)]:
+        branch = "4.0" if runtime == (4, 0) else "4.1"
+        return f"com.microsoft.azure:synapseml-lightgbm_2.13:1.1.3-spark{branch}"
+    raise RuntimeError(f"No configured SynapseML build for Spark {spark_version}")
+
+
 def create_spark_session(master_url: str, app_name: str = "FlightDelay_PureSpark_EndToEnd"):
+    import pyspark
+    packages = os.environ.get("SPARK_EXTRA_PACKAGES") or synapseml_coordinate(pyspark.__version__)
+    if int(pyspark.__version__.split('.')[0]) >= 4 and 'synapseml_2.12:' in packages:
+        raise RuntimeError(
+            f"PySpark {pyspark.__version__} is incompatible with SynapseML Scala 2.12. "
+            "Remove the old SPARK_EXTRA_PACKAGES override so the launcher can select a Scala 2.13 build."
+        )
+    if pyspark.__version__.startswith('4.2.'):
+        print('[!] Spark 4.2: using SynapseML 4.1 / Scala 2.13 compatibility build; '
+              'upstream does not list Spark 4.2 support. Training errors remain failures.')
     print(f"[*] Đang khởi tạo Apache SparkSession kết nối tới: {master_url}...")
     is_cluster = "spark://" in master_url
+    # A driver absolute path is not portable to other Windows machines.
+    # Worker launcher places that machine's venv first on PATH.
+    if os.name == 'nt':
+        os.environ.setdefault('PYSPARK_PYTHON', 'python' if is_cluster else sys.executable)
 
-    if is_cluster:
-        os.environ["SPARK_LOCAL_IP"] = "100.65.205.113"
+    driver_host = os.environ.get("SPARK_DRIVER_HOST")
+    if is_cluster and driver_host:
+        os.environ["SPARK_LOCAL_IP"] = driver_host
 
     builder = (
         SparkSession.builder
         .appName(app_name)
         .master(master_url)
+        .config("spark.jars.packages", packages)
+        .config("spark.jars.repositories", "https://mmlspark.blob.core.windows.net/maven,https://repo.maven.apache.org/maven2")
         .config("spark.driver.memory", "3g")
         .config("spark.executor.memory", "3g")
-        .config("spark.sql.shuffle.partitions", "12")
+        .config("spark.sql.shuffle.partitions", os.environ.get("SPARK_PARTITIONS", "12"))
+        .config("spark.default.parallelism", os.environ.get("SPARK_PARTITIONS", "12"))
+        .config("spark.executor.instances", os.environ.get("SPARK_EXECUTOR_INSTANCES", "3"))
+        .config("spark.cores.max", str(int(os.environ.get("SPARK_EXECUTOR_INSTANCES", "3")) * int(os.environ.get("SPARK_EXECUTOR_CORES", "2"))))
+        .config("spark.executor.cores", os.environ.get("SPARK_EXECUTOR_CORES", "2"))
+        .config("spark.task.cpus", os.environ.get("SPARK_TASK_CPUS", os.environ.get("SPARK_EXECUTOR_CORES", "2")))
+        .config("spark.hadoop.dfs.client.use.datanode.hostname", os.environ.get("SPARK_HDFS_DATANODE_HOSTNAME", "false"))
         .config("spark.sql.execution.arrow.pyspark.enabled", "true")
+        .config("spark.sql.execution.pyspark.udf.faulthandler.enabled", "true")
+        .config("spark.python.worker.faulthandler.enabled", "true")
+        .config("spark.executorEnv.PYTHONFAULTHANDLER", "1")
         .config("spark.network.timeout", "1200s")
         .config("spark.executor.heartbeatInterval", "60s")
         .config("spark.rpc.message.maxSize", "512")
@@ -122,13 +161,16 @@ def create_spark_session(master_url: str, app_name: str = "FlightDelay_PureSpark
         .config("spark.core.connection.ack.wait.timeout", "600s")
     )
 
-    if is_cluster:
-        builder = (
-            builder
-            .config("spark.driver.host", "100.65.205.113")
-            .config("spark.driver.bindAddress", "100.65.205.113")
-        )
+    if is_cluster and driver_host:
+        builder = (builder.config("spark.driver.host", driver_host)
+                   .config("spark.driver.bindAddress", driver_host))
 
+    for env, config in [("SPARK_EXTRA_PACKAGES", "spark.jars.packages"),
+                        ("SPARK_EXTRA_REPOSITORIES", "spark.jars.repositories"),
+                        ("SPARK_EXTRA_PY_FILES", "spark.submit.pyFiles"),
+                        ("SPARK_IVY_SETTINGS", "spark.jars.ivySettings")]:
+        if os.environ.get(env):
+            builder = builder.config(config, os.environ[env])
     spark = builder.getOrCreate()
     spark.sparkContext.setLogLevel("WARN")
     print(f"[✓] SparkSession đã sẵn sàng (Spark Version: {spark.version})")
@@ -139,53 +181,23 @@ def create_spark_session(master_url: str, app_name: str = "FlightDelay_PureSpark
 # HÀM ĐO ĐẠC HAI NHÁNH THỜI GIAN (PURE SPARK VS WALL-CLOCK WITH WIFI/VPN)
 # ==============================================================================
 class SparkDualTimingBenchmark:
-    """Bộ đo đạc phân định: Thời gian thuần Spark Engine vs Thời gian gồm mạng WiFi/Tailscale."""
+    """Measure elapsed wall-clock without inventing CPU/network durations."""
     def __init__(self, spark):
         self.spark = spark
         self.sc = spark.sparkContext
 
     def measure(self, func, *args, **kwargs):
-        tracker = self.sc._jsc.sc().statusTracker()
-        try:
-            jobs_before = set(tracker.getJobIdsForGroup(None) or [])
-        except Exception:
-            jobs_before = set()
-
-        t0_wall = time.perf_counter()
+        # Wall-clock is measured directly. CPU-only and network-only durations
+        # require executor/event-log instrumentation and cannot be inferred here.
+        started = time.perf_counter()
         result = func(*args, **kwargs)
-        t_wall = time.perf_counter() - t0_wall
-
-        try:
-            jobs_after = set(tracker.getJobIdsForGroup(None) or [])
-            new_jobs = jobs_after - jobs_before
-            pure_spark_time = 0.0
-            for jid in new_jobs:
-                j_info = tracker.getJobInfo(jid)
-                if j_info:
-                    for sid in j_info.stageIds():
-                        s_info = tracker.getStageInfo(sid)
-                        if s_info:
-                            sub = s_info.submissionTime()
-                            comp = s_info.completionTime()
-                            if sub > 0 and comp > sub:
-                                pure_spark_time += (comp - sub) / 1000.0
-        except Exception:
-            pure_spark_time = 0.0
-
-        # Nếu không lấy được stage timestamp hoặc tỷ lệ bất thường, tính toán ước lượng nội tại JVM
-        if pure_spark_time <= 0 or pure_spark_time > t_wall:
-            pure_spark_time = round(t_wall * 0.42, 3)
-
-        wifi_overhead = max(0.0, t_wall - pure_spark_time)
-        overhead_pct = (wifi_overhead / t_wall * 100.0) if t_wall > 0 else 0.0
-
-        timing_info = {
-            "pure_spark_time_s": round(pure_spark_time, 2),
-            "wall_clock_time_s": round(t_wall, 2),
-            "network_wifi_overhead_s": round(wifi_overhead, 2),
-            "overhead_percentage": round(overhead_pct, 1)
+        return result, {
+            "pure_spark_time_s": None,
+            "wall_clock_time_s": round(time.perf_counter() - started, 6),
+            "network_wifi_overhead_s": None,
+            "overhead_percentage": None,
+            "timing_method": "perf_counter_wall_clock",
         }
-        return result, timing_info
 
 
 # ==============================================================================
@@ -293,16 +305,20 @@ def execute_pure_spark_etl(spark, input_csv: Path, output_parquet: Path, master_
     benchmarker = SparkDualTimingBenchmark(spark)
     is_cluster = "spark://" in master_url
 
+    raw_row_count = 0
+
     def _etl_operation():
+        nonlocal raw_row_count
         if is_cluster:
-            # Chế độ Cụm 3 Laptop: Driver nạp Stream và phân phối 12 Partitions qua mạng Tailscale cho 3 Workers
+            # Driver streams CSV chunks and sends configurable partitions to the active executors.
             import pyarrow as pa
             import pyarrow.dataset as ds
-            print("[*] [Cluster Mode] Driver đang nạp Stream các khối 1M dòng và phân phối tới 3 Workers...")
+            print("[*] [Cluster Mode] Driver đang nạp các khối CSV và phân phối tới các executor đang hoạt động...")
             csv_reader = pd.read_csv(str(input_csv), usecols=REQUIRED_COLUMNS, chunksize=1_000_000, low_memory=False)
             for chunk_idx, chunk in enumerate(csv_reader, 1):
+                raw_row_count += len(chunk)
                 t_c = time.perf_counter()
-                sdf = spark.createDataFrame(chunk).repartition(12)
+                sdf = spark.createDataFrame(chunk).repartition(int(spark.conf.get("spark.sql.shuffle.partitions")))
                 clean_sdf = clean_spark_dataframe(sdf)
                 clean_pdf = clean_sdf.toPandas()
                 table = pa.Table.from_pandas(clean_pdf, preserve_index=False)
@@ -316,7 +332,7 @@ def execute_pure_spark_etl(spark, input_csv: Path, output_parquet: Path, master_
                     existing_data_behavior="overwrite_or_ignore"
                 )
                 elapsed_c = time.perf_counter() - t_c
-                print(f"  [+] Chunk {chunk_idx:>2}: Đọc 1,000,000 dòng -> 3 Workers xử lý và ghi Parquet trong {elapsed_c:.2f}s")
+                print(f"  [+] Chunk {chunk_idx:>2}: Đọc {len(chunk):,} dòng -> các executor xử lý và ghi Parquet trong {elapsed_c:.2f}s")
                 del chunk, sdf, clean_sdf, clean_pdf, table
                 gc.collect()
         else:
@@ -327,6 +343,7 @@ def execute_pure_spark_etl(spark, input_csv: Path, output_parquet: Path, master_
                 .option("inferSchema", "false") \
                 .csv(str(input_csv)) \
                 .select(REQUIRED_COLUMNS)
+            raw_row_count = raw_sdf.count()
             clean_sdf = clean_spark_dataframe(raw_sdf)
             clean_sdf.write \
                 .mode("overwrite") \
@@ -342,17 +359,15 @@ def execute_pure_spark_etl(spark, input_csv: Path, output_parquet: Path, master_
     pq_table = pq.read_table(str(output_parquet), columns=['month'])
     total_cleaned_rows = len(pq_table)
     del pq_table
-    total_raw_rows = 7079081
+    total_raw_rows = raw_row_count
     filtered_rows = total_raw_rows - total_cleaned_rows
     pq_size_mb = sum(f.stat().st_size for f in output_parquet.glob("**/*") if f.is_file()) / (1024 * 1024)
     peak_ram = get_process_ram_mb()
 
     print(f"\n[✓] Hoàn tất Thuần PySpark ETL:")
-    print(f"    • Nhánh 1 (Thuần Spark tính toán)     : {timing_info['pure_spark_time_s']} giây")
-    print(f"    • Nhánh 2 (Toàn trình có trễ WiFi/VPN): {timing_info['wall_clock_time_s']} giây")
-    print(f"    • Độ trễ hao phí mạng WiFi / Tailscale: {timing_info['network_wifi_overhead_s']}s ({timing_info['overhead_percentage']}%)")
+    print(f"    • Wall-clock thực đo: {timing_info['wall_clock_time_s']} giây")
     print(f"    • Tổng số dòng sạch thu được          : {total_cleaned_rows:,} dòng (Đã lọc: {filtered_rows:,})")
-    print(f"    • Dung lượng Parquet nén              : {pq_size_mb:.2f} MB (Tỉ lệ nén ~8.7x)")
+    print(f"    • Dung lượng Parquet nén              : {pq_size_mb:.2f} MB")
 
     return {
         "pure_spark_time_seconds": timing_info['pure_spark_time_s'],
@@ -363,16 +378,16 @@ def execute_pure_spark_etl(spark, input_csv: Path, output_parquet: Path, master_
         "total_cleaned_rows": total_cleaned_rows,
         "filtered_rows": filtered_rows,
         "parquet_size_mb": round(pq_size_mb, 2),
-        "peak_ram_mb": round(peak_ram, 1)
+        "driver_python_rss_after_etl_mb": round(peak_ram, 1)
     }
 
 
 # ==============================================================================
-# GIAI ĐOẠN 2 & 3: THUẦN PYSPARK FEATURE PIPELINE & 6 MÔ HÌNH HỌC MÁY PHÂN TÁN
+# GIAI ĐOẠN 2 & 3: THUẦN PYSPARK FEATURE PIPELINE & 5 MÔ HÌNH HỌC MÁY PHÂN TÁN
 # ==============================================================================
 def execute_pure_spark_mllib(spark, parquet_path: Path, master_url: str = "", num_trees: int = 20, max_depth: int = 10):
     print("\n" + "=" * 80)
-    print(" [GIAI ĐOẠN 2/3] NẠP PARQUET & XÂY DỰNG SPARK FEATURE PIPELINE THUẦN TÚY")
+    print(" [HUẤN LUYỆN 1/2] NẠP PARQUET & XÂY DỰNG ĐẶC TRƯNG")
     print("=" * 80)
 
     num_cols = [
@@ -390,8 +405,8 @@ def execute_pure_spark_mllib(spark, parquet_path: Path, master_url: str = "", nu
     pdf = table.to_pandas()
     del table
 
-    # Phân phối trực tiếp 12 RDD Partitions qua mạng Tailscale tới các Worker
-    df = spark.createDataFrame(pdf).repartition(12)
+    # Distribute partitions to the executors registered with Spark.
+    df = spark.createDataFrame(pdf).repartition(int(spark.conf.get("spark.sql.shuffle.partitions")))
     del pdf
     gc.collect()
 
@@ -404,11 +419,11 @@ def execute_pure_spark_mllib(spark, parquet_path: Path, master_url: str = "", nu
     indexing_pipeline = Pipeline(stages=indexers)
     indexed_df = indexing_pipeline.fit(df).transform(df)
 
-    # TỐI ƯU HÓA MẠNG CHO CỤM 3 LAPTOP (TRÁNH NGHẼN WIFI / TAILSCALE):
+    # Reduce high-cardinality histogram traffic between executors.
     # Hai cột 'origin' và 'dest' có 349 mã sân bay (high-cardinality).
     # Ép kiểu về DoubleType() để xóa metadata categorical -> Spark xử lý dạng numeric continuous.
     # Nhờ vậy DecisionTree & RandomForest chỉ cần maxBins=32 chuẩn, giảm 95% lượng shuffle data qua WiFi,
-    # giúp cả 3 máy huấn luyện trơn tru trong vài giây mà không bao giờ bị đứt socket hay nghẽn mạng!
+    # Runtime and network reliability are measured, not guaranteed by this conversion.
     indexed_df = indexed_df \
         .withColumn("origin_code", F.col("origin_code").cast(DoubleType())) \
         .withColumn("dest_code", F.col("dest_code").cast(DoubleType()))
@@ -432,18 +447,17 @@ def execute_pure_spark_mllib(spark, parquet_path: Path, master_url: str = "", nu
     print(f"[✓] Dữ liệu đã sẵn sàng: Train {train_count:,} dòng | Val {val_count:,} dòng | Test {test_count:,} dòng")
 
     # ==============================================================================
-    # KHỞI TẠO BỘ 6 MÔ HÌNH HỌC MÁY PHÂN TÁN
+    # KHỞI TẠO BỘ 5 MÔ HÌNH HỌC MÁY PHÂN TÁN
     # ==============================================================================
     print("\n" + "=" * 80)
-    print(" [GIAI ĐOẠN 3/3] HUẤN LUYỆN ĐỒNG THỜI BỘ 6 MÔ HÌNH TRÊN SPARK PHÂN TÁN")
+    print(" [HUẤN LUYỆN 2/2] HUẤN LUYỆN VÀ ĐÁNH GIÁ LẦN LƯỢT 5 MÔ HÌNH")
     print("=" * 80)
-    print(" Danh sách 6 mô hình học máy phân tán trên Spark:")
+    print(" Danh sách 5 mô hình học máy phân tán trên Spark:")
     print("   1. Logistic Regression (Spark MLlib Native - Multinomial L-BFGS)")
     print("   2. Decision Tree       (Spark MLlib Native - Cây quyết định phân tán)")
     print("   3. Random Forest       (Spark MLlib Native - Rừng ngẫu nhiên phân tán - Trọng tâm)")
     print("   4. XGBoost on Spark    (Third-party - SparkXGBClassifier)")
     print("   5. LightGBM on Spark   (Third-party - Microsoft SynapseML / Distributed Engine)")
-    print("   6. CatBoost on Spark   (Third-party - Yandex CatBoost Spark / Distributed Engine)")
 
     acc_evaluator = MulticlassClassificationEvaluator(labelCol=target_col, predictionCol="prediction", metricName="accuracy")
     f1_evaluator = MulticlassClassificationEvaluator(labelCol=target_col, predictionCol="prediction", metricName="weightedFMeasure")
@@ -486,8 +500,8 @@ def execute_pure_spark_mllib(spark, parquet_path: Path, master_url: str = "", nu
             "estimator": RandomForestClassifier(
                 featuresCol="features",
                 labelCol=target_col,
-                numTrees=10,
-                maxDepth=6,
+                numTrees=num_trees,
+                maxDepth=max_depth,
                 maxBins=32,
                 seed=42
             ),
@@ -495,194 +509,100 @@ def execute_pure_spark_mllib(spark, parquet_path: Path, master_url: str = "", nu
         }
     ]
 
-    # --- Mô hình 4: XGBoost on Spark (Third-party) ---
-    if HAS_XGBOOST_SPARK:
-        models_config.append({
-            "id": "xgboost_spark",
-            "name": "XGBoost (Spark Distributed)",
+    # Construct third-party estimators inside the per-model error boundary.
+    models_config.extend([
+        {
+            "id": "xgboost_spark", "name": "XGBoost (Spark Distributed)",
             "type": "third_party_spark",
-            "estimator": SparkXGBClassifier(
-                features_col="features",
-                label_col=target_col,
-                n_estimators=30,
-                max_depth=6,
-                learning_rate=0.08,
-                num_workers=1,
-                random_state=42
-            ),
-            "save_dir": MODELS_DIR / "xgboost_spark_model"
-        })
-    else:
-        print("[!] Chú ý: Chưa nạp được xgboost.spark, bỏ qua mô hình 4.")
-
-    # --- Mô hình 5: LightGBM on Spark (Third-party) ---
-    if HAS_SYNAPSE_LIGHTGBM:
-        models_config.append({
-            "id": "lightgbm_spark",
-            "name": "LightGBM (SynapseML Spark)",
+            "factory": lambda: SparkXGBClassifier(
+                features_col="features", label_col=target_col,
+                n_estimators=30, max_depth=6, learning_rate=0.08,
+                num_workers=int(os.environ.get("SPARK_XGB_WORKERS", "3")),
+                random_state=42),
+        },
+        {
+            "id": "lightgbm_spark", "name": "LightGBM (SynapseML / Spark)",
             "type": "third_party_spark",
-            "estimator": SynapseLightGBM(
-                featuresCol="features",
-                labelCol=target_col,
-                numLeaves=31,
-                numIterations=50,
-                learningRate=0.08
-            ),
-            "save_dir": MODELS_DIR / "lightgbm_spark_model"
-        })
-    else:
-        # Nếu chưa nạp SynapseML package JAR, thiết lập mô hình ghi nhận trạng thái kiến trúc
-        models_config.append({
-            "id": "lightgbm_spark",
-            "name": "LightGBM (SynapseML / Spark)",
-            "type": "third_party_spark_mock",
-            "estimator": None,
-            "save_dir": None
-        })
-
-    # --- Mô hình 6: CatBoost on Spark (Third-party) ---
-    if HAS_CATBOOST_SPARK:
-        models_config.append({
-            "id": "catboost_spark",
-            "name": "CatBoost (CatBoost-Spark)",
-            "type": "third_party_spark",
-            "estimator": catboost_spark.CatBoostClassifier(
-                iterations=50,
-                depth=8
-            ),
-            "save_dir": MODELS_DIR / "catboost_spark_model"
-        })
-    else:
-        # Nếu chưa nạp CatBoost-Spark package JAR, thiết lập mô hình ghi nhận trạng thái kiến trúc
-        models_config.append({
-            "id": "catboost_spark",
-            "name": "CatBoost (CatBoost-Spark)",
-            "type": "third_party_spark_mock",
-            "estimator": None,
-            "save_dir": None
-        })
-
+            "factory": lambda: SynapseLightGBM(
+                featuresCol="features", labelCol=target_col,
+                objective="multiclass",
+                numLeaves=31, numIterations=50, learningRate=0.08,
+                numTasks=int(os.environ.get("SPARK_EXECUTOR_INSTANCES", "3")),
+                numThreads=int(os.environ.get("SPARK_EXECUTOR_CORES", "2"))),
+        },
+    ])
     all_models_results = {}
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     benchmarker = SparkDualTimingBenchmark(spark)
-
     for item in models_config:
-        m_id = item["id"]
-        m_name = item["name"]
-        m_type = item["type"]
-        estimator = item["estimator"]
-        save_path = item.get("save_dir")
-
-        print("\n" + "-" * 76)
-        print(f"[*] Đang thực thi huấn luyện: {m_name}")
-        print(f"    Kiến trúc: {'Chính chủ Apache Spark' if m_type == 'native_spark' else 'Bên thứ ba hỗ trợ Spark'}")
-
-        if m_type == "third_party_spark_mock":
-            # Mô hình bên thứ 3 chưa cấu hình file JAR Maven trên máy Worker
-            print(f"    [!] Cụm chưa tải file JAR Maven cho {m_name}. Ghi nhận thời gian kiến trúc đối chuẩn.")
-            res = {
-                "name": m_name,
-                "type": "Bên thứ ba (Cần JAR)",
-                "pure_spark_time_seconds": 28.50,
-                "wall_clock_time_seconds": 65.40,
-                "network_wifi_overhead_seconds": 36.90,
-                "overhead_percentage": 56.4,
-                "latency_ms_per_1k": 1.45,
-                "accuracy": 0.7925,
-                "f1_score_weighted": 0.7020,
-                "precision_weighted": 0.6950,
-                "recall_weighted": 0.7925,
-                "status": "Ready (Requires SynapseML/CatBoost JAR)"
-            }
-            all_models_results[m_id] = res
-            continue
-
+        m_id, m_name = item["id"], item["name"]
+        started = time.perf_counter()
+        predictions = None
+        phase = "initialization"
+        res = {
+            "name": m_name, "type": item["type"], "status": "failed",
+            "train_rows": train_count, "validation_rows": val_count,
+            "test_rows": test_count,
+            "pure_spark_time_seconds": None,
+            "network_wifi_overhead_seconds": None,
+            "overhead_percentage": None,
+        }
+        print(f"[*] Huấn luyện thật: {m_name}")
         try:
-            # Đo 2 nhánh thời gian cho quá trình fit
-            def _fit_operation():
-                return estimator.fit(train_df)
-
-            fitted_model, timing_info = benchmarker.measure(_fit_operation)
-
-            # Suy luận và đánh giá trên tập test
-            t_pred_start = time.perf_counter()
-            predictions = fitted_model.transform(test_df)
-            predictions.cache()
-            pred_cnt = predictions.count()
-            t_pred = time.perf_counter() - t_pred_start
-            pred_latency_ms = (t_pred / pred_cnt) * 1000 if pred_cnt > 0 else 0.0
-
-            accuracy = float(acc_evaluator.evaluate(predictions))
-            f1_weighted = float(f1_evaluator.evaluate(predictions))
-            precision_weighted = float(prec_evaluator.evaluate(predictions))
-            recall_weighted = float(rec_evaluator.evaluate(predictions))
-
-            print(f" [✓] {m_name}:")
-            print(f"     • Nhánh 1 (Thuần Spark Engine)      : {timing_info['pure_spark_time_s']}s")
-            print(f"     • Nhánh 2 (Toàn trình gồm WiFi/VPN) : {timing_info['wall_clock_time_s']}s")
-            print(f"     • Độ trễ hao phí mạng WiFi/Tailscale: {timing_info['network_wifi_overhead_s']}s ({timing_info['overhead_percentage']}%)")
-            print(f"     • Độ chính xác (Accuracy)           : {accuracy*100:.2f}% | F1-Score: {f1_weighted*100:.2f}%")
-
-            # Lưu mô hình nếu có đường dẫn
-            if save_path:
+            estimator = item["factory"]() if "factory" in item else item["estimator"]
+            res["estimator_params"] = {
+                param.name: str(value) for param, value in estimator.extractParamMap().items()
+            }
+            ram_before = get_process_ram_mb()
+            phase = "fit"
+            fitted_model, timing = benchmarker.measure(lambda: estimator.fit(train_df))
+            res["wall_clock_time_seconds"] = timing["wall_clock_time_s"]
+            phase = "evaluation"
+            pred_started = time.perf_counter()
+            predictions = fitted_model.transform(test_df).cache()
+            pred_count = predictions.count()
+            if pred_count == 0:
+                raise ValueError("Empty test set; cannot evaluate model")
+            res["latency_ms_per_1k"] = round(
+                (time.perf_counter() - pred_started) * 1_000_000 / pred_count, 6)
+            res["prediction_rows"] = pred_count
+            res["accuracy"] = float(acc_evaluator.evaluate(predictions))
+            res["f1_score_weighted"] = float(f1_evaluator.evaluate(predictions))
+            res["precision_weighted"] = float(prec_evaluator.evaluate(predictions))
+            res["recall_weighted"] = float(rec_evaluator.evaluate(predictions))
+            counts = predictions.groupBy(target_col, "prediction").count().collect()
+            matrix = [[0 for _ in TARGET_NAMES] for _ in TARGET_NAMES]
+            for row in counts:
+                matrix[int(row[target_col])][int(row["prediction"])] += int(row["count"])
+            res["confusion_matrix"] = matrix
+            res["target_names"] = TARGET_NAMES
+            res["f1_score_macro"] = macro_f1_from_counts(matrix)
+            res["driver_python_rss_before_fit_mb"] = round(ram_before, 2)
+            res["driver_python_rss_after_evaluation_mb"] = round(get_process_ram_mb(), 2)
+            if hasattr(fitted_model, "featureImportances"):
+                res["top_features"] = sorted(
+                    zip(feature_cols, fitted_model.featureImportances.toArray().tolist()),
+                    key=lambda value: value[1], reverse=True)
+            phase = "save_model"
+            model_base_uri = os.environ.get("SPARK_MODEL_BASE_URI")
+            save_path = (model_base_uri.rstrip("/") + f"/{m_id}_model"
+                         if model_base_uri else MODELS_DIR / f"{m_id}_model")
+            fitted_model.write().overwrite().save(str(save_path))
+            res["model_path"] = str(save_path)
+            res["status"] = "success"
+        except Exception as exc:
+            res["failed_phase"] = phase
+            res["error"] = f"{type(exc).__name__}: {exc}"
+            res["traceback"] = traceback.format_exc()
+            print(f"[!] {m_name}: {res['error']}")
+        finally:
+            if predictions is not None:
                 try:
-                    fitted_model.write().overwrite().save(str(save_path))
+                    predictions.unpersist()
                 except Exception:
                     pass
-
-            res = {
-                "name": m_name,
-                "type": "Native Spark MLlib" if m_type == "native_spark" else "Third-party Spark",
-                "pure_spark_time_seconds": timing_info["pure_spark_time_s"],
-                "wall_clock_time_seconds": timing_info["wall_clock_time_s"],
-                "network_wifi_overhead_seconds": timing_info["network_wifi_overhead_s"],
-                "overhead_percentage": timing_info["overhead_percentage"],
-                "latency_ms_per_1k": round(pred_latency_ms * 1000, 2),
-                "accuracy": round(accuracy, 4),
-                "f1_score_weighted": round(f1_weighted, 4),
-                "precision_weighted": round(precision_weighted, 4),
-                "recall_weighted": round(recall_weighted, 4),
-                "status": "Hoàn tất thành công"
-            }
-
-            if hasattr(fitted_model, "featureImportances"):
-                importances = fitted_model.featureImportances.toArray().tolist()
-                feat_imp_list = sorted(zip(feature_cols, importances), key=lambda x: x[1], reverse=True)
-                res["top_features"] = feat_imp_list[:8]
-
+            res["attempt_wall_clock_seconds"] = round(time.perf_counter() - started, 6)
             all_models_results[m_id] = res
-            predictions.unpersist()
-
-        except Exception as e:
-            print(f" [!] Gặp lỗi khi huấn luyện {m_name}: {e}")
-            if "xgboost" in m_id:
-                # Nếu kết nối socket barrier qua mạng WiFi gặp lỗi ngắt quãng, lưu thông số đối chuẩn kiến trúc
-                all_models_results[m_id] = {
-                    "name": m_name,
-                    "type": "Third-party Spark (Barrier Fallback)",
-                    "pure_spark_time_seconds": 32.15,
-                    "wall_clock_time_seconds": 74.20,
-                    "network_wifi_overhead_seconds": 42.05,
-                    "overhead_percentage": 56.7,
-                    "latency_ms_per_1k": 1.80,
-                    "accuracy": 0.7927,
-                    "f1_score_weighted": 0.7036,
-                    "precision_weighted": 0.7453,
-                    "recall_weighted": 0.7927,
-                    "status": "Hoàn tất (Kiến trúc phân tán)"
-                }
-            else:
-                all_models_results[m_id] = {
-                    "name": m_name,
-                    "type": m_type,
-                    "pure_spark_time_seconds": 0.0,
-                    "wall_clock_time_seconds": 0.0,
-                    "network_wifi_overhead_seconds": 0.0,
-                    "overhead_percentage": 0.0,
-                    "accuracy": 0.0,
-                    "f1_score_weighted": 0.0,
-                    "status": f"Error: {e}"
-                }
 
     return all_models_results
 
@@ -690,122 +610,139 @@ def execute_pure_spark_mllib(spark, parquet_path: Path, master_url: str = "", nu
 # ==============================================================================
 # HÀM ĐIỀU PHỐI CHÍNH TOÀN TRÌNH
 # ==============================================================================
-def run_end_to_end_pipeline(master_url: str, num_trees: int, max_depth: int, force_etl: bool = False, skip_etl: bool = False):
+def run_end_to_end_pipeline(master_url: str, num_trees: int, max_depth: int,
+                            force_etl: bool = False, skip_etl: bool = True,
+                            parquet_path: Path = CLEAN_PARQUET_DIR):
+    parquet_path = Path(parquet_path).expanduser().resolve()
+    skip_etl = skip_etl and not force_etl
+    if skip_etl and not parquet_path.exists():
+        raise FileNotFoundError(f"Cleaned Parquet not found: {parquet_path}. Supply --parquet or explicitly use --run-etl.")
     start_total_wall = time.perf_counter()
 
     print("=" * 88)
-    print(" HỆ THỐNG PIPELINE HỌC MÁY PHÂN TÁN TOÀN TRÌNH THUẦN APACHE SPARK (END-TO-END)")
+    print(" PYSPARK: HUẤN LUYỆN 5 MÔ HÌNH TỪ PARQUET ĐÃ TIỀN XỬ LÝ")
     print("=" * 88)
     print(f" • Cụm tính toán     : {master_url}")
-    print(f" • Nguồn dữ liệu thô : {RAW_CSV_PATH}")
+    print(f" • Dữ liệu sạch đầu vào: {parquet_path}")
+    print(f" • Chạy lại ETL: {'không (mặc định)' if skip_etl else 'có (--run-etl)'}")
     print(f" • Cấu hình RF       : {num_trees} Trees, MaxDepth {max_depth}")
-    print(f" • Đo lường 2 Nhánh  : Nhánh 1 (Thuần Spark) vs Nhánh 2 (Toàn trình có WiFi & VPN)")
+    print(" • Đo thời gian: wall-clock thực đo; không suy diễn thời gian CPU/mạng")
     print("=" * 88)
 
     spark = create_spark_session(master_url)
+    try:
+        require_training_dependencies(spark)
+    except Exception:
+        spark.stop()
+        raise
 
-    # GIAI ĐOẠN 1: SPARK DISTRIBUTED ETL TOÀN TRÌNH
-    if skip_etl:
-        print("\n" + "=" * 80)
-        print(" [GIAI ĐOẠN 1/3] BỎ QUA BƯỚC ETL THEO CỜ --skip-etl")
-        print("=" * 80)
-        etl_results = {
-            "pure_spark_time_seconds": 118.52,
-            "wall_clock_time_seconds": 296.30,
-            "network_wifi_overhead_seconds": 177.78,
-            "overhead_percentage": 60.0,
-            "total_raw_rows": 7079081,
-            "total_cleaned_rows": 6965267,
-            "filtered_rows": 113814,
-            "parquet_size_mb": 143.0,
-            "peak_ram_mb": 835.2,
-            "status": "Tận dụng Parquet có sẵn"
-        }
-    else:
-        # LUÔN CHẠY TOÀN TRÌNH TỪ CSV THÔ (KHÔNG NHẢY CÓC)
-        etl_results = execute_pure_spark_etl(
+    try:
+        # GIAI ĐOẠN 1: SPARK DISTRIBUTED ETL TOÀN TRÌNH
+        if skip_etl:
+            print("\n" + "=" * 80)
+            print(" [ĐẦU VÀO] SỬ DỤNG PARQUET ĐÃ TIỀN XỬ LÝ; KHÔNG CHẠY ETL")
+            print("=" * 80)
+            etl_results = {"status": "skipped", "wall_clock_time_seconds": None,
+                           "reason": "Reused preprocessed Parquet; previous ETL timing is not included"}
+
+        else:
+            # LUÔN CHẠY TOÀN TRÌNH TỪ CSV THÔ (KHÔNG NHẢY CÓC)
+            etl_results = execute_pure_spark_etl(
+                spark=spark,
+                input_csv=RAW_CSV_PATH,
+                output_parquet=parquet_path,
+                master_url=master_url
+            )
+
+        # GIAI ĐOẠN 2 & 3: HUẤN LUYỆN 5 MÔ HÌNH TRÊN SPARK
+        ml_results = execute_pure_spark_mllib(
             spark=spark,
-            input_csv=RAW_CSV_PATH,
-            output_parquet=CLEAN_PARQUET_DIR,
-            master_url=master_url
+            parquet_path=parquet_path,
+            master_url=master_url,
+            num_trees=num_trees,
+            max_depth=max_depth
         )
 
-    # GIAI ĐOẠN 2 & 3: HUẤN LUYỆN 6 MÔ HÌNH TRÊN SPARK
-    ml_results = execute_pure_spark_mllib(
-        spark=spark,
-        parquet_path=CLEAN_PARQUET_DIR,
-        master_url=master_url,
-        num_trees=num_trees,
-        max_depth=max_depth
-    )
+        total_pipeline_wall = time.perf_counter() - start_total_wall
 
-    total_pipeline_wall = time.perf_counter() - start_total_wall
+        # TỔNG HỢP VÀ LƯU CHỈ SỐ METRICS
+        METRICS_DIR.mkdir(parents=True, exist_ok=True)
+        summary_metrics = {
+            "pipeline_name": "PySpark Pipeline (5 Models, measured results only)",
+            "model_count": len(ml_results),
+            "synapseml_packages": spark.sparkContext.getConf().get("spark.jars.packages", ""),
+            "schema_version": 2,
+            "status": "success" if all(v["status"] == "success" for v in ml_results.values()) else "failed",
+            "spark_version": spark.version,
+            "etl_included": not skip_etl,
+            "input_parquet": str(parquet_path),
+            "run_mode": "training_only" if skip_etl else "etl_and_training",
+            "total_time_scope": "Spark setup, dependency checks, Parquet loading, feature pipeline, training, evaluation and model saving" + ("; ETL included" if not skip_etl else "; ETL excluded"),
+            "spark_master": master_url,
+            "cluster_configuration": {
+                "executor_instances_requested": int(os.environ.get("SPARK_EXECUTOR_INSTANCES", "3")),
+                "partitions": int(spark.conf.get("spark.sql.shuffle.partitions")),
+                "xgboost_workers": int(os.environ.get("SPARK_XGB_WORKERS", "3")),
+                "driver_host": os.environ.get("SPARK_DRIVER_HOST"),
+                "note": "Executor requests are not a measurement of physical machines; use the Spark Master UI to verify workers",
+            },
+            "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+            "total_pipeline_wall_clock_seconds": round(total_pipeline_wall, 2),
+            "total_pipeline_wall_clock_minutes": round(total_pipeline_wall / 60, 2),
+            "etl_stage": etl_results,
+            "mllib_stage": ml_results
+        }
 
-    # TỔNG HỢP VÀ LƯU CHỈ SỐ METRICS
-    METRICS_DIR.mkdir(parents=True, exist_ok=True)
-    summary_metrics = {
-        "pipeline_name": "Pure PySpark Distributed Pipeline (6 Models on 3-Node Tailscale Cluster)",
-        "spark_master": master_url,
-        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
-        "total_pipeline_wall_clock_seconds": round(total_pipeline_wall, 2),
-        "total_pipeline_wall_clock_minutes": round(total_pipeline_wall / 60, 2),
-        "etl_stage": etl_results,
-        "mllib_stage": ml_results
-    }
+        metrics_filename = "spark_training_metrics.json" if skip_etl else "spark_end_to_end_metrics.json"
+        metrics_file = METRICS_DIR / metrics_filename
+        if metrics_file.exists():
+            previous = metrics_file.read_bytes()
+            archive_dir = METRICS_DIR / "archive"
+            archive_dir.mkdir(exist_ok=True)
+            archive_file = archive_dir / ("metrics_" + hashlib.sha256(previous).hexdigest()[:16] + ".json")
+            if not archive_file.exists():
+                archive_file.write_bytes(previous)
+        pending_metrics = metrics_file.with_suffix(".tmp")
+        pending_metrics.write_text(json.dumps(summary_metrics, indent=4, ensure_ascii=False), encoding="utf-8")
+        pending_metrics.replace(metrics_file)
 
-    metrics_file = METRICS_DIR / "spark_end_to_end_metrics.json"
-    with open(metrics_file, "w", encoding="utf-8") as f:
-        json.dump(summary_metrics, f, indent=4, ensure_ascii=False)
-
-    # Cập nhật bảng đối sánh tổng thể grand_model_comparison_7m.csv
-    csv_comp_file = BASE_DIR / "results" / "baseline" / "metrics" / "grand_model_comparison_7m.csv"
-    if csv_comp_file.exists():
-        try:
-            comp_df = pd.read_csv(csv_comp_file)
-            comp_df = comp_df[~comp_df["Model"].str.contains("Spark", na=False)]
-            new_spark_rows = []
-            for m_key, m_info in ml_results.items():
-                new_spark_rows.append({
-                    "Model": m_info["name"],
-                    "Train Time (s)": m_info["wall_clock_time_seconds"],
-                    "Latency (ms/1k)": m_info.get("latency_ms_per_1k", 1.5),
-                    "RAM Usage (MB)": etl_results.get("peak_ram_mb", 835.2),
-                    "Accuracy (%)": round(m_info["accuracy"] * 100, 2),
-                    "Weighted Precision (%)": round(m_info.get("precision_weighted", 0.0) * 100, 2),
-                    "Weighted Recall (%)": round(m_info.get("recall_weighted", 0.0) * 100, 2),
-                    "Weighted F1 (%)": round(m_info["f1_score_weighted"] * 100, 2),
-                    "Macro F1 (%)": 28.25
+        # Store each invocation separately; failures must not become benchmark scores.
+        run_dir = METRICS_DIR / "runs" / datetime.now().strftime("%Y%m%d_%H%M%S_%f")
+        run_dir.mkdir(parents=True, exist_ok=False)
+        with open(run_dir / metrics_filename, "w", encoding="utf-8") as f:
+            json.dump(summary_metrics, f, indent=4, ensure_ascii=False)
+        csv_rows = []
+        for info in ml_results.values():
+            row = {"Model": info["name"], "Status": info["status"],
+                   "Error": info.get("error", "")}
+            if info["status"] == "success":
+                row.update({
+                    "Train Time (s)": info["wall_clock_time_seconds"],
+                    "Latency (ms/1k)": info["latency_ms_per_1k"],
+                    "Driver Python RSS after evaluation (MB)": info["driver_python_rss_after_evaluation_mb"],
+                    "Accuracy (%)": info["accuracy"] * 100,
+                    "Weighted Precision (%)": info["precision_weighted"] * 100,
+                    "Weighted Recall (%)": info["recall_weighted"] * 100,
+                    "Weighted F1 (%)": info["f1_score_weighted"] * 100,
+                    "Macro F1 (%)": info["f1_score_macro"] * 100,
                 })
-            comp_df = pd.concat([comp_df, pd.DataFrame(new_spark_rows)], ignore_index=True)
-            comp_df.to_csv(csv_comp_file, index=False)
-            print(f"[✓] Đã cập nhật bảng đối sánh tổng thể tại: {csv_comp_file}")
-        except Exception as e:
-            print(f"[!] Chú ý khi cập nhật CSV đối sánh: {e}")
+            csv_rows.append(row)
+        pd.DataFrame(csv_rows).to_csv(run_dir / "model_metrics.csv", index=False)
+        for info in ml_results.values():
+            print(f"{info['name']}: {info['status']} | {info.get('error', '')}")
+        print(f"[✓] Kết quả của lần chạy được lưu tại: {run_dir}")
 
-    # BẢNG TỔNG HỢP HIỆU NĂNG 2 NHÁNH THỜI GIAN
-    print("\n" + "=" * 96)
-    print(" BẢNG TỔNG HỢP HIỆU NĂNG 6 MÔ HÌNH SPARK TRÊN CỤM 3 LAPTOP (ĐO 2 NHÁNH THỜI GIAN)")
-    print("=" * 96)
-    print(f" • Tổng thời gian thực thi: {total_pipeline_wall:.2f}s ({total_pipeline_wall / 60:.2f} phút)")
-    print(f" • Dữ liệu: 4,875,851 dòng Train (70%) | 1,044,254 dòng Val (15%) | 1,045,162 dòng Test (15%)")
-    print("-" * 96)
-    print(f" {'Mô hình':<30} | {'Nhánh 1: Thuần Spark':<20} | {'Nhánh 2: Có WiFi/VPN':<20} | {'Hao phí mạng WiFi':<16}")
-    print("-" * 96)
-    for m_key, m_info in ml_results.items():
-        pure_t = f"{m_info['pure_spark_time_seconds']:.2f} s"
-        wall_t = f"{m_info['wall_clock_time_seconds']:.2f} s"
-        net_t = f"{m_info['network_wifi_overhead_seconds']:.2f} s ({m_info['overhead_percentage']}%)"
-        print(f" {m_info['name']:<30} | {pure_t:>18}  | {wall_t:>18}  | {net_t:>15}")
-    print("=" * 96)
-    print(f" [✓] Đã lưu tệp chỉ số chi tiết: {metrics_file}")
-    print("=" * 96)
+        failed = [info["name"] for info in ml_results.values() if info["status"] != "success"]
+        if failed:
+            raise RuntimeError("Training incomplete; see saved errors: " + ", ".join(failed))
+        return summary_metrics
+    finally:
+        spark.stop()
 
-    spark.stop()
-    return summary_metrics
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Pure PySpark End-to-End Pipeline (ETL + 6 Models)")
+    parser = argparse.ArgumentParser(description="Train five PySpark models from cleaned Parquet (three-executor requests; ETL disabled by default)")
     parser.add_argument(
         "--master",
         type=str,
@@ -824,24 +761,50 @@ def main():
         default=10,
         help="Độ sâu tối đa của cây (mặc định: 10)"
     )
-    parser.add_argument(
-        "--force-etl",
-        action="store_true",
-        help="Bắt buộc chạy lại ETL thuần PySpark từ CSV ngay cả khi đã có sẵn Parquet sạch"
-    )
-    parser.add_argument(
-        "--skip-etl",
-        action="store_true",
-        help="Bỏ qua bước ETL nếu đã có sẵn tệp Parquet sạch"
-    )
+    parser.add_argument("--parquet", type=Path, default=CLEAN_PARQUET_DIR,
+                        help="Cleaned Parquet file or partitioned directory on the Driver")
+    etl_mode = parser.add_mutually_exclusive_group()
+    etl_mode.add_argument("--run-etl", "--force-etl", dest="run_etl", action="store_true",
+                          help="Explicitly rebuild cleaned Parquet before training")
+    etl_mode.add_argument("--skip-etl", action="store_true",
+                          help="Skip ETL (already the default)")
+
+    parser.add_argument("--spark-packages", default="", help="Comma-separated compatible Maven coordinates")
+    parser.add_argument("--spark-repositories", default="", help="Comma-separated Maven repository URLs")
+    parser.add_argument("--spark-py-files", default="", help="Python wrapper zip files for Spark")
+    parser.add_argument("--xgb-workers", type=int, default=3, help="XGBoost Spark training workers")
+    parser.add_argument("--executors", type=int, default=3, help="Requested executors (default: 3; does not start Spark Workers)")
+    parser.add_argument("--partitions", type=int, default=12, help="Shuffle/input partitions (default: 12)")
+    parser.add_argument("--driver-host", default=os.environ.get("SPARK_DRIVER_HOST"), help="Driver IP reachable from all three machines (e.g. Tailscale IP)")
+    parser.add_argument("--check-dependencies", action="store_true", help="Check wrappers/JVM before ETL, then exit")
 
     args = parser.parse_args()
+    if min(args.num_trees, args.max_depth, args.xgb_workers, args.executors, args.partitions) < 1:
+        parser.error("num-trees, max-depth, xgb-workers, executors and partitions must be positive")
+    for key, value in [("SPARK_EXTRA_PACKAGES", args.spark_packages),
+                       ("SPARK_EXTRA_REPOSITORIES", args.spark_repositories),
+                       ("SPARK_EXTRA_PY_FILES", args.spark_py_files)]:
+        if value:
+            os.environ[key] = value
+    os.environ["SPARK_XGB_WORKERS"] = str(args.xgb_workers)
+    os.environ["SPARK_EXECUTOR_INSTANCES"] = str(args.executors)
+    os.environ["SPARK_PARTITIONS"] = str(args.partitions)
+    if args.driver_host:
+        os.environ["SPARK_DRIVER_HOST"] = args.driver_host
+    if args.check_dependencies:
+        session = create_spark_session(args.master)
+        try:
+            require_training_dependencies(session)
+            print("All five model dependencies are available")
+        finally:
+            session.stop()
+        return
     run_end_to_end_pipeline(
         master_url=args.master,
         num_trees=args.num_trees,
         max_depth=args.max_depth,
-        force_etl=args.force_etl,
-        skip_etl=args.skip_etl
+        skip_etl=not args.run_etl,
+        parquet_path=args.parquet
     )
 
 
