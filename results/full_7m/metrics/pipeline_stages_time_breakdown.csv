@@ -1,3 +1,4 @@
 Approach,ETL,Feature_Engineering,Training,Evaluation,Total_Time,Peak_RAM_MB
-Hướng Thuần (Pandas/Scikit),43.88,2.5,85.18,1.8,133.36,1756.5
-Hướng Phân Tán (Apache Spark),4.0,8.52,49.89,2.83,65.24,1012.22
+Hướng Thuần (Đơn máy CPU),65.42,6.2,85.18,1.8,158.6,1756.5
+Spark (Thực tế Wi-Fi),66.94,3.5,31.03,2.1,103.57,392.9
+Spark (Thuần Tính Toán),28.12,1.8,13.03,1.86,44.81,392.9
