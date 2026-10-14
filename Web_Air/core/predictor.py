@@ -20,7 +20,8 @@ def build_13_features(
     fl_date: str,
     dep_time_str: str,
     crs_elapsed_time: float,
-    distance: float
+    distance: float,
+    arr_time_str: str = None
 ) -> np.ndarray:
     """Chuyển đổi các tham số đầu vào từ người dùng thành vector 13 đặc trưng float32.
     Đảm bảo 100% đồng nhất với pipeline huấn luyện train_all_7m.py.
@@ -31,32 +32,43 @@ def build_13_features(
         month = float(dt.month)
         day_of_month = float(dt.day)
         day_of_week = float(dt.isoweekday())  # 1=Thứ Hai ... 7=Chủ Nhật
-    except Exception:
-        month, day_of_month, day_of_week = 7.0, 15.0, 1.0
+    except Exception as exc:
+        raise ValueError("Ngày bay phải có dạng YYYY-MM-DD") from exc
 
     # 2. Trích xuất giờ và phút cất cánh
     try:
         parts = str(dep_time_str).strip().split(":")
         dep_hour = int(parts[0])
         dep_min = int(parts[1]) if len(parts) > 1 else 0
-    except Exception:
-        dep_hour, dep_min = 12, 0
+    except Exception as exc:
+        raise ValueError("Giờ bay phải có dạng HH:MM") from exc
+    if not (0 <= dep_hour < 24 and 0 <= dep_min < 60):
+        raise ValueError("Giờ bay không hợp lệ")
 
     dep_min_of_day = float(dep_hour * 60 + dep_min)
     arr_min_of_day = float((dep_min_of_day + float(crs_elapsed_time)) % 1440)
+    if arr_time_str:
+        try:
+            ah, am = map(int, arr_time_str.split(':'))
+            if not (0 <= ah < 24 and 0 <= am < 60):
+                raise ValueError()
+            arr_min_of_day = float(ah * 60 + am)
+        except Exception as exc:
+            raise ValueError("Giờ đến phải có dạng HH:MM hợp lệ") from exc
     arr_hour = float((int(arr_min_of_day) // 60) % 24)
 
     # 3. Phân khúc thời gian trong ngày (dep_time_of_day)
     if 5 <= dep_hour < 12:
-        time_of_day_str = "Morning (05:00 - 11:59)"
+        time_of_day_str = "Morning"
     elif 12 <= dep_hour < 17:
-        time_of_day_str = "Afternoon (12:00 - 16:59)"
-    elif 17 <= dep_hour < 21:
-        time_of_day_str = "Evening (17:00 - 20:59)"
+        time_of_day_str = "Afternoon"
+    elif 17 <= dep_hour < 22:
+        time_of_day_str = "Evening"
     else:
-        time_of_day_str = "Night (21:00 - 04:59)"
+        time_of_day_str = "Night"
 
     # 4. Mã hóa biến danh mục qua LabelEncoder đã fit
+    model_manager.load_all()
     encoders = model_manager.encoders
     cat_vals = {
         'op_unique_carrier': str(op_unique_carrier).strip().upper(),
@@ -72,9 +84,9 @@ def build_13_features(
             if raw_val in le.classes_:
                 encoded_cat[col] = float(le.transform([raw_val])[0])
             else:
-                encoded_cat[col] = 0.0  # Fallback nếu mã sân bay / hãng bay lạ
+                raise ValueError(f"Giá trị {raw_val!r} của {col} chưa có trong bộ mã hóa")
         else:
-            encoded_cat[col] = 0.0
+            raise ValueError(f"Thiếu bộ mã hóa cho {col}")
 
     # 5. Lắp ráp đúng thứ tự 13 đặc trưng (9 Numeric + 4 Categorical)
     row_values = [
@@ -118,9 +130,10 @@ def predict_single_model(model_id: str, input_features: np.ndarray) -> dict:
     if hasattr(model, "predict_proba"):
         try:
             raw_probs = np.array(model.predict_proba(X_eval)).reshape(-1)
-            for idx, p in enumerate(raw_probs):
-                if idx < 6:
-                    probs[idx] = float(p)
+            for label, probability in zip(model.classes_, raw_probs):
+                code = int(label)
+                if 0 <= code < 6:
+                    probs[code] = float(probability)
         except Exception:
             probs[pred_label] = 1.0
     else:
@@ -166,6 +179,7 @@ def predict_single_model(model_id: str, input_features: np.ndarray) -> dict:
 
 def predict_all_models(input_features: np.ndarray) -> list:
     """Thực thi suy luận đối đầu song song trên cả 6 mô hình cho cùng 1 chuyến bay."""
+    model_manager.load_all()
     results = []
     for mid in [
         "catboost", "xgboost", "random_forest_cpu",

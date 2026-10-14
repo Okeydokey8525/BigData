@@ -83,7 +83,8 @@ function applyPreset(presetId) {
         if (el) el.value = val;
     }
 
-    // Tự động kích hoạt dự đoán với mô hình hiện tại
+    document.getElementById("arr_time_str").value = "";
+    // Nhập giờ đến địa phương trước khi dự đoán với một tuyến mẫu.
     handlePredict(false);
 }
 
@@ -105,7 +106,8 @@ async function handlePredict(isBattle = false) {
         fl_date: document.getElementById("fl_date").value,
         dep_time_str: document.getElementById("dep_time_str").value,
         crs_elapsed_time: parseFloat(document.getElementById("crs_elapsed_time").value),
-        distance: parseFloat(document.getElementById("distance").value)
+        distance: parseFloat(document.getElementById("distance").value),
+        arr_time_str: document.getElementById("arr_time_str").value
     };
 
     const placeholder = document.getElementById("result-placeholder");
@@ -248,25 +250,55 @@ async function loadMetricsData() {
     const tbody = document.getElementById("metrics-tbody");
     const stagesBody = document.getElementById("stages-tbody");
 
+    const display = value => value == null ? "—" : value;
+    try {
+        const response = await fetch("/api/results-status");
+        const status = await response.json();
+        document.getElementById("results-provenance").textContent =
+            `CPU: ${status.cpu_source}. Spark: ${status.spark_timestamp || "chưa có"}. Chỉ hiển thị mô hình có số đo hợp lệ.`;
+        const inventory = document.getElementById("saved-spark-models");
+        inventory.replaceChildren();
+        status.spark_saved_models.forEach(model => {
+            const line = document.createElement("p");
+            line.textContent = `${model.name} • lưu ${model.saved_at} • ${model.note}`;
+            inventory.appendChild(line);
+        });
+    } catch (error) { console.error("Không đọc được nguồn kết quả", error); }
     // 1. Tải bảng đối sánh chính
     try {
         const resp = await fetch("/api/metrics");
         if (resp.ok) {
             const data = await resp.json();
             if (data.length > 0) {
+                const highlights = document.getElementById("result-highlights");
+                highlights.replaceChildren();
+                const cpu = data.filter(row => !row.Model.includes("Spark"));
+                const bestF1 = cpu.reduce((a,b) => a["Weighted F1 (%)"] >= b["Weighted F1 (%)"] ? a : b);
+                const bestMacro = cpu.reduce((a,b) => a["Macro F1 (%)"] >= b["Macro F1 (%)"] ? a : b);
+                const sparkRF = data.find(row => row.Model.includes("Random Forest") && row.Model.includes("Spark"));
+                [ [bestF1.Model, `Weighted F1: ${bestF1["Weighted F1 (%)"]}%`],
+                  [bestMacro.Model, `Macro F1: ${bestMacro["Macro F1 (%)"]}%`],
+                  ...(sparkRF ? [[sparkRF.Model, `Train: ${sparkRF["Train Time (s)"]} giây`]] : [])
+                ].forEach(([name, value]) => {
+                    const card = document.createElement("div"); card.className = "champ-card";
+                    const info = document.createElement("div"); info.className = "champ-info";
+                    const title = document.createElement("h3"); title.textContent = name;
+                    const metric = document.createElement("p"); metric.textContent = value;
+                    info.append(title, metric); card.append(info); highlights.append(card);
+                });
                 tbody.innerHTML = "";
                 data.forEach(row => {
                     const tr = document.createElement("tr");
                     tr.innerHTML = `
                         <td><strong>${row["Model"]}</strong></td>
-                        <td>${row["Train Time (s)"]}</td>
-                        <td>${row["Latency (ms/1k)"]}</td>
-                        <td>${row["RAM Usage (MB)"]}</td>
-                        <td>${row["Accuracy (%)"]}</td>
-                        <td>${row["Weighted Precision (%)"]}</td>
-                        <td>${row["Weighted Recall (%)"]}</td>
-                        <td class="${row['Weighted F1 (%)'] > 70.5 ? 'highlight-best' : ''}">${row["Weighted F1 (%)"]}</td>
-                        <td>${row["Macro F1 (%)"]}</td>
+                        <td>${display(row["Train Time (s)"])}</td>
+                        <td>${display(row["Latency (ms/1k)"])}</td>
+                        <td>${display(row["RAM Usage (MB)"])}</td>
+                        <td>${display(row["Accuracy (%)"])}</td>
+                        <td>${display(row["Weighted Precision (%)"])}</td>
+                        <td>${display(row["Weighted Recall (%)"])}</td>
+                        <td class="${row['Weighted F1 (%)'] > 70.5 ? 'highlight-best' : ''}">${display(row["Weighted F1 (%)"])}</td>
+                        <td>${display(row["Macro F1 (%)"])}</td>
                     `;
                     tbody.appendChild(tr);
                 });
@@ -287,12 +319,12 @@ async function loadMetricsData() {
                     const tr = document.createElement("tr");
                     tr.innerHTML = `
                         <td><strong>${s["Approach"]}</strong></td>
-                        <td>${s["ETL"]}</td>
-                        <td>${s["Feature_Engineering"]}</td>
-                        <td>${s["Training"]}</td>
-                        <td>${s["Evaluation"]}</td>
-                        <td><strong>${s["Total_Time"]}</strong></td>
-                        <td>${s["Peak_RAM_MB"]}</td>
+                        <td>${display(s["ETL"])}</td>
+                        <td>${display(s["Feature_Engineering"])}</td>
+                        <td>${display(s["Training"])}</td>
+                        <td>${display(s["Evaluation"])}</td>
+                        <td><strong>${display(s["Total_Time"])}</strong></td>
+                        <td>${display(s["Peak_RAM_MB"])}</td>
                     `;
                     stagesBody.appendChild(tr);
                 });
@@ -400,7 +432,7 @@ async function fetchSystemStatus() {
             const data = await resp.json();
             const badge = document.getElementById("sys-summary");
             if (badge) {
-                badge.innerText = `RTX 5050 | RAM: ${data.ram_available_gb}GB Trống (${data.process_ram_mb}MB App)`;
+                badge.innerText = `${data.models_count} mô hình CPU | RAM trống: ${data.ram_available_gb} GB`;
             }
         }
     } catch (e) {

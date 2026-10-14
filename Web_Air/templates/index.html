@@ -34,14 +34,14 @@
                 </button>
                 <button class="tab-btn" data-tab="tab-figures">
                     <span class="tab-icon">🖼️</span>
-                    <span class="tab-title">Thư Viện Biểu Đồ (24)</span>
+                    <span class="tab-title">Biểu đồ kết quả</span>
                 </button>
             </nav>
 
             <!-- SYSTEM PILL -->
             <div class="sys-badge" id="sys-status-badge" title="Cấu hình máy chủ thực nghiệm">
                 <span class="dot"></span>
-                <span id="sys-summary">RTX 5050 | Ryzen 7</span>
+                <span id="sys-summary">Đang đọc trạng thái</span>
             </div>
         </div>
     </header>
@@ -132,6 +132,11 @@
                             </div>
                         </div>
 
+                        <div class="form-group">
+                            <label for="arr_time_str">Giờ đến dự kiến tại sân bay đến</label>
+                            <input type="time" id="arr_time_str" name="arr_time_str" value="11:30" required>
+                            <small>Dùng giờ địa phương trên lịch bay để khớp đặc trưng đã huấn luyện.</small>
+                        </div>
                         <div class="form-actions">
                             <button type="submit" class="btn btn-primary" id="btn-single-predict">
                                 <span>🚀</span> Chạy Dự Đoán Mô Hình
@@ -151,8 +156,8 @@
                         <h3>Sẵn Sàng Dự Báo Chuyến Bay</h3>
                         <p>Nhập thông số chuyến bay ở bên trái hoặc chọn 1 chuyến bay mẫu, sau đó nhấn <strong>Chạy Dự Đoán</strong> để nhận kết quả phân tích theo thời gian thực.</p>
                         <div class="model-pills">
-                            <span class="pill">CatBoost GPU</span>
-                            <span class="pill">XGBoost GPU</span>
+                            <span class="pill">CatBoost CPU</span>
+                            <span class="pill">XGBoost CPU</span>
                             <span class="pill">Random Forest CPU</span>
                             <span class="pill">LightGBM</span>
                             <span class="pill">Decision Tree</span>
@@ -227,36 +232,14 @@
         <!-- =============================================================== -->
         <section id="tab-benchmark" class="tab-pane">
             <div class="section-header">
-                <h2>Bảng Vàng Đối Sánh Toàn Diện 7 Mô Hình Học Máy</h2>
-                <p>Kết quả thực nghiệm chính thức trên 100% tập dữ liệu chuyến bay Hoa Kỳ năm 2024 (6,965,267 dòng sạch).</p>
+                <h2>Kết quả mô hình CPU và Spark</h2>
+                <p>Chỉ số đọc từ file thực nghiệm. Dấu — biểu thị chỉ số chưa được lưu hoặc chưa xác nhận.</p>
             </div>
 
-            <!-- TOP 3 CHAMPIONS -->
-            <div class="champions-grid">
-                <div class="champ-card gold">
-                    <div class="champ-icon">🏆</div>
-                    <div class="champ-info">
-                        <h3>CatBoost (GPU/CPU SOTA)</h3>
-                        <p class="champ-metric">Weighted F1: <strong>70.83%</strong> | Macro F1: <strong>16.54%</strong></p>
-                        <span class="champ-note">Dẫn đầu tuyệt đối về chất lượng phân loại 6 nhãn trễ trên 7M dòng.</span>
-                    </div>
-                </div>
-                <div class="champ-card lightning">
-                    <div class="champ-icon">⚡</div>
-                    <div class="champ-info">
-                        <h3>XGBoost (GPU CUDA RTX 5050)</h3>
-                        <p class="champ-metric">Thời gian huấn luyện: <strong>19.27 giây</strong></p>
-                        <span class="champ-note">Tăng tốc phần cứng GPU nhanh hơn <strong>5.5 lần</strong> so với Random Forest CPU.</span>
-                    </div>
-                </div>
-                <div class="champ-card distributed">
-                    <div class="champ-icon">🌐</div>
-                    <div class="champ-info">
-                        <h3>Spark MLlib Random Forest</h3>
-                        <p class="champ-metric">RAM tiêu thụ: <strong>1,012 MB</strong> | Thời gian: <strong>49.89s</strong></p>
-                        <span class="champ-note">Mô hình phân tán hạt nhân của đồ án: Nhanh hơn <strong>2.8 lần</strong> RF Scikit-Learn.</span>
-                    </div>
-                </div>
+            <div class="champions-grid" id="result-highlights"></div>
+            <div class="card" style="padding:20px;margin-bottom:20px">
+                <p id="results-provenance">Đang đọc nguồn kết quả…</p>
+                <div id="saved-spark-models"></div>
             </div>
 
             <!-- BẢNG ĐỐI SÁNH CHÍNH -->
@@ -286,8 +269,8 @@
             <!-- BẢNG BÓC TÁCH 4 GIAI ĐOẠN PIPELINE -->
             <div class="card table-card" style="margin-top: 24px;">
                 <div class="card-header">
-                    <h2>Bóc Tách Thời Gian 4 Giai Đoạn Pipeline (Toàn Trình 7.07M Dòng)</h2>
-                    <span class="badge badge-primary">So Sánh Hướng Thuần vs Apache Spark</span>
+                    <h2>Thời gian và phạm vi đo</h2>
+                    <span class="badge badge-primary">Không cộng các lần đo khác phạm vi</span>
                 </div>
                 <div class="table-responsive">
                     <table class="data-table" id="stages-table">
@@ -315,16 +298,16 @@
         <!-- =============================================================== -->
         <section id="tab-figures" class="tab-pane">
             <div class="section-header">
-                <h2>Thư Viện 24 Biểu Đồ Khoa Học Thực Nghiệm 7M</h2>
+                <h2>Biểu đồ thực nghiệm</h2>
                 <p>Hệ thống trực quan hóa toàn diện phục vụ báo cáo đồ án của Nhóm 6 (TS. Phan Hồ Viết Trường).</p>
             </div>
 
             <!-- FIGURE FILTERS -->
             <div class="filter-bar">
-                <button class="filter-btn active" data-filter="all">Tất Cả (24)</button>
-                <button class="filter-btn" data-filter="overview">Tổng Quan & Đối Sánh (11)</button>
-                <button class="filter-btn" data-filter="confusion_matrix">Ma Trận Nhầm Lẫn - CM (7)</button>
-                <button class="filter-btn" data-filter="feature_importance">Tầm Quan Trọng Đặc Trưng (6)</button>
+                <button class="filter-btn active" data-filter="all">Tất cả</button>
+                <button class="filter-btn" data-filter="overview">Tổng quan</button>
+                <button class="filter-btn" data-filter="confusion_matrix">Ma trận nhầm lẫn</button>
+                <button class="filter-btn" data-filter="feature_importance">Đặc trưng</button>
             </div>
 
             <!-- FIGURES GRID -->

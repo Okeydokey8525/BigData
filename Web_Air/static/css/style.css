@@ -1016,3 +1016,14 @@ body {
     color: var(--text-dim);
     margin-top: 6px;
 }
+
+/* Keep navigation and result provenance readable in a narrow browser panel. */
+#results-provenance, #saved-spark-models { overflow-wrap: anywhere; }
+#saved-spark-models p { margin-top: 10px; color: var(--text-muted); }
+@media (max-width: 900px) {
+    .nav-container { flex-wrap: wrap; }
+    .brand { flex: 1 1 100%; }
+    .nav-tabs { flex: 1 1 100%; }
+    .tab-btn { flex: 1; padding: 10px 6px; }
+    .sys-badge { max-width: 100%; }
+}
