@@ -49,3 +49,4 @@ models/
 Thumbs.db
 Desktop.ini
 docker/spark/.env
+.aider*
